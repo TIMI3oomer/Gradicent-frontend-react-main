@@ -1,0 +1,34 @@
+/* Medical Theme CSS Variables */
+.medical-theme {
+  --bg: #D9C4B0;
+  --surface: #EAD9C8;
+  --surface-alt: #F5EDE3;
+  --accent: #CE7A35;
+  --accent-hover: #B8691F;
+  --accent-light: rgba(206, 122, 53, 0.1);
+  --cyan: #78CEE6;
+  --cyan-dark: #4AACCF;
+  --text: #2B2B2B;
+  --text-muted: #6B6560;
+  --text-light: #9B8E87;
+  --border: #C4AD97;
+  --border-light: #DDD0C2;
+  --success: #4CAF7D;
+  --warning: #E8A838;
+  --danger: #D95C5C;
+  --sidebar-bg: #C8AF99;
+  --sidebar-text: #2B2B2B;
+  --sidebar-text-muted: #6B6560;
+  --sidebar-active-bg: rgba(206, 122, 53, 0.1);
+  --sidebar-active-border: #CE7A35;
+  --sidebar-hover-bg: rgba(206, 122, 53, 0.06);
+  --card-shadow: 0 2px 12px rgba(43, 43, 43, 0.08);
+  --card-shadow-hover: 0 6px 24px rgba(43, 43, 43, 0.14);
+
+  --font-display: var(--font-lora);
+  --font-heading: var(--font-source-serif);
+  --font-body: var(--font-dm-sans);
+
+  --skeleton-base: #c9b59e;
+  --skeleton-shine: #dac9b4;
+}

@@ -1,0 +1,69 @@
+/* Business Theme CSS Variables - Light Mode */
+.business-theme {
+  --bg: #F7F9FC;
+  --surface: #FFFFFF;
+  --surface-alt: #EFF3F8;
+  --primary: #1171BB;
+  --primary-hover: #0A5A99;
+  --primary-light: #EBF4FB;
+  --accent: #FF9F1C;
+  --accent-hover: #E88A00;
+  --navy: #212D40;
+  --navy-lighter: #2D3D56;
+  --navy-light: #3D5275;
+  --text: #1A2332;
+  --text-muted: #5A6880;
+  --text-light: #8B9AB0;
+  --border: #DDE4EE;
+  --border-light: #EEF2F7;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --purple: #7C3AED;
+  --sidebar-bg: #212D40;
+  --sidebar-text: #E8EDF5;
+  --sidebar-text-muted: #5A7090;
+  --sidebar-active-bg: #3D5275;
+  --sidebar-active-border: #1171BB;
+  --sidebar-hover-bg: #2D3D56;
+  --card-shadow: 0 1px 4px rgba(26, 35, 50, 0.08);
+  --card-shadow-hover: 0 4px 16px rgba(26, 35, 50, 0.12);
+
+  --font-display: var(--font-syne);
+  --font-heading: var(--font-dm-sans);
+  --font-body: var(--font-inter);
+
+  --skeleton-base: #e2e8f0;
+  --skeleton-shine: #f1f5f9;
+}
+
+/* Dark mode overrides */
+.business-theme.dark {
+  --bg: #0B0F1A;
+  --surface: #111827;
+  --surface-alt: #1C2537;
+  --primary: #3B9AE1;
+  --primary-hover: #5BAEE8;
+  --primary-light: #1C2E40;
+  --accent: #FF9F1C;
+  --accent-hover: #FFB84D;
+  --navy: #070C16;
+  --navy-lighter: #0F1825;
+  --navy-light: #1A2A40;
+  --text: #E8EDF5;
+  --text-muted: #9AAEC5;
+  --text-light: #5A7090;
+  --border: #1E2D42;
+  --border-light: #162030;
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
+  --purple: #A78BFA;
+  --sidebar-bg: #070C16;
+  --sidebar-hover-bg: #0F1825;
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+
+  --skeleton-base: #1c2537;
+  --skeleton-shine: #253047;
+}
