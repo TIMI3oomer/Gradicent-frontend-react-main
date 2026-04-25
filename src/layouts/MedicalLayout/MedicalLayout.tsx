@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { MedicalSidebar } from './MedicalSidebar';
 import { MedicalTopBar } from './MedicalTopBar';
+import { useTheme } from '../../context/ThemeContext';
 
 interface MedicalLayoutProps {
   children: ReactNode;
@@ -12,8 +13,10 @@ interface MedicalLayoutProps {
 }
 
 export function MedicalLayout({ children, title, breadcrumb, actionLabel, actionPath }: MedicalLayoutProps) {
+  const { isDark } = useTheme();
+
   return (
-    <div className="medical-layout medical-theme">
+    <div className={`medical-layout medical-theme${isDark ? ' dark' : ''}`}>
       <a href="#main-content" className="skip-link">Skip to content</a>
       <MedicalSidebar />
       <div className="medical-main">

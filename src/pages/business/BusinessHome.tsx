@@ -4,7 +4,6 @@ import { DollarSign, Users, TrendingDown, ChartBar as BarChart3 } from 'lucide-r
 import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
 import { KPIGrid } from '../../components/business/KPIGrid';
 import { RevenueChart } from '../../components/business/RevenueChart';
-import { SparklineChart } from '../../components/business/SparklineChart';
 import { Badge } from '../../components/shared/Badge';
 import { PlanBadge } from '../../components/business/PlanBadge';
 import { DataTable, type Column } from '../../components/shared/DataTable/DataTable';

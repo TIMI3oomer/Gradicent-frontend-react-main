@@ -6,7 +6,7 @@ export const MEDICAL_ROUTES = {
   HOME: '/medical/home',
   PATIENTS: '/medical/patients',
   PATIENT_DETAIL: '/medical/patients/:id',
-  ADD_PATIENT: '/medical/add-patient',
+  ADD_PATIENT: '/medical/patients/add',
   APPOINTMENTS: '/medical/appointments',
   STATS: '/medical/stats',
   DATA: '/medical/data',
@@ -19,6 +19,7 @@ export const MEDICAL_ROUTES = {
 export const BUSINESS_ROUTES = {
   HOME: '/business/home',
   CLIENTS: '/business/clients',
+  CLIENTS_ADD: '/business/clients/add',
   CLIENT_DETAIL: '/business/clients/:id',
   PRODUCTS: '/business/products',
   SERVICES: '/business/services',

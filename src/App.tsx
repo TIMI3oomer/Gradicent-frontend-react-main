@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import { queryClient } from './lib/queryClient';
+import { MEDICAL_ROUTES } from './lib/constants';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
@@ -31,6 +32,7 @@ import { MedicalAccount } from './pages/medical/MedicalAccount';
 // Business
 import { BusinessHome } from './pages/business/BusinessHome';
 import { Clients } from './pages/business/Clients';
+import { ClientRegistration } from './pages/shared/ClientRegistration';
 import { ClientDetail } from './pages/business/ClientDetail';
 import { Employees } from './pages/business/Employees';
 import { EmployeeDetail } from './pages/business/EmployeeDetail';
@@ -44,6 +46,7 @@ import { BusinessSettings } from './pages/business/BusinessSettings';
 import { BusinessAccount } from './pages/business/BusinessAccount';
 import { Plan } from './pages/business/Plan';
 import { BusinessNotifications } from './pages/business/BusinessNotifications';
+import { BUSINESS_ROUTES } from './lib/constants';
 
 export default function App() {
   return (
@@ -65,7 +68,7 @@ export default function App() {
                 <Route path="/medical" element={<ProtectedRoute><Navigate to="/medical/home" replace /></ProtectedRoute>} />
                 <Route path="/medical/home" element={<ProtectedRoute><MedicalHome /></ProtectedRoute>} />
                 <Route path="/medical/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
-                <Route path="/medical/patients/add" element={<ProtectedRoute><AddPatient /></ProtectedRoute>} />
+                <Route path={MEDICAL_ROUTES.ADD_PATIENT} element={<ProtectedRoute><AddPatient /></ProtectedRoute>} />
                 <Route path="/medical/patients/:id" element={<ProtectedRoute><PatientDetail /></ProtectedRoute>} />
                 <Route path="/medical/appointments" element={<ProtectedRoute><MedicalAppointments /></ProtectedRoute>} />
                 <Route path="/medical/stats" element={<ProtectedRoute><MedicalStats /></ProtectedRoute>} />
@@ -79,6 +82,7 @@ export default function App() {
                 <Route path="/business" element={<ProtectedRoute><Navigate to="/business/home" replace /></ProtectedRoute>} />
                 <Route path="/business/home" element={<ProtectedRoute><BusinessHome /></ProtectedRoute>} />
                 <Route path="/business/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+                <Route path={BUSINESS_ROUTES.CLIENTS_ADD} element={<ProtectedRoute><ClientRegistration domain="business" /></ProtectedRoute>} />
                 <Route path="/business/clients/:id" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
                 <Route path="/business/employees" element={<ProtectedRoute><Employees /></ProtectedRoute>} />
                 <Route path="/business/employees/:id" element={<ProtectedRoute><EmployeeDetail /></ProtectedRoute>} />

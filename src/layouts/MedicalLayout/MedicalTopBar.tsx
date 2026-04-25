@@ -1,5 +1,6 @@
-import { Bell, Plus } from 'lucide-react';
+import { Bell, Plus, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../context/ThemeContext';
 import { mockNotifications } from '../../data/notifications';
 
 interface MedicalTopBarProps {
@@ -11,6 +12,7 @@ interface MedicalTopBarProps {
 
 export function MedicalTopBar({ title, breadcrumb, actionLabel, actionPath }: MedicalTopBarProps) {
   const navigate = useNavigate();
+  const { isDark, toggleDark } = useTheme();
   const unreadCount = mockNotifications.filter(n => !n.read && n.domain === 'medical').length;
 
   return (
@@ -20,6 +22,15 @@ export function MedicalTopBar({ title, breadcrumb, actionLabel, actionPath }: Me
         <h1 className="topbar-title">{title}</h1>
       </div>
       <div className="topbar-actions">
+        <button
+          className={`dark-mode-toggle${isDark ? ' on' : ''}`}
+          onClick={toggleDark}
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={isDark ? 'Light mode' : 'Dark mode'}
+        >
+          <div className="dark-mode-knob" />
+        </button>
+        {isDark ? <Moon size={14} style={{ color: 'var(--text-muted)' }} aria-hidden="true" /> : <Sun size={14} style={{ color: 'var(--text-muted)' }} aria-hidden="true" />}
         {actionLabel && (
           <button
             className="btn-primary btn-md"

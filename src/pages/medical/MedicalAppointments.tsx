@@ -1,158 +1,337 @@
-import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Calendar, Check, Lock, RefreshCcw, Save, Search, UserCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
 import { Badge } from '../../components/shared/Badge';
-import { mockAppointments } from '../../data/appointments';
 import { formatDate } from '../../lib/formatters';
+import {
+  fetchDomain,
+  fetchUserId,
+  getAppointmentsForDate,
+  lockAppointment,
+  saveAppointments,
+  trackUsageTime,
+} from '../../lib/api';
 
-const HOURS = Array.from({ length: 11 }, (_, i) => i + 8); // 8am-6pm
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+type AppointmentSlot = {
+  no: string | number;
+  name: string;
+  phone: string;
+  msg: string;
+  locked?: boolean;
+  [key: string]: unknown;
+};
 
-function getWeekDates(offset: number) {
-  const today = new Date();
-  const day = today.getDay();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
+type FilterMode = 'all' | 'has' | 'none';
+
+function isoToday() {
+  const now = new Date();
+  const tzOffset = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - tzOffset).toISOString().slice(0, 10);
+}
+
+function normalizeSlot(slot: unknown, index: number): AppointmentSlot {
+  const entry = (slot ?? {}) as Record<string, unknown>;
+  const rawNo = entry.no ?? entry.number ?? entry.id ?? index + 1;
+
+  return {
+    ...entry,
+    no: typeof rawNo === 'string' || typeof rawNo === 'number' ? rawNo : index + 1,
+    name: String(entry.name ?? entry.clientName ?? entry.attendeeName ?? 'Unknown'),
+    phone: String(entry.phone ?? entry.mobile ?? ''),
+    msg: String(entry.msg ?? entry.message ?? ''),
+    locked: Boolean(entry.locked ?? entry.isLocked ?? entry.finalized ?? false),
+  };
 }
 
 export function MedicalAppointments() {
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [view, setView] = useState<'week' | 'list'>('week');
-  const weekDates = getWeekDates(weekOffset);
+  const [dateIso, setDateIso] = useState(isoToday());
+  const [currentUserId, setCurrentUserId] = useState<string | number | null>(null);
+  const [currentDomain, setCurrentDomain] = useState('medical');
+  const [appointments, setAppointments] = useState<AppointmentSlot[]>([]);
+  const [filter, setFilter] = useState<FilterMode>('all');
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ type: 'info' | 'success' | 'error'; message: string } | null>(null);
 
-  const medAppts = mockAppointments.filter(a => a.type === 'Medical');
+  useEffect(() => {
+    let cancelled = false;
 
-  const getApptForDayHour = (date: Date, hour: number) => {
-    const dateStr = date.toISOString().split('T')[0];
-    return medAppts.filter(a => {
-      const apptHour = parseInt(a.time.split(':')[0]);
-      return a.date === dateStr && apptHour === hour;
+    async function init() {
+      try {
+        const [userId, domain] = await Promise.all([fetchUserId(), fetchDomain()]);
+        if (cancelled) return;
+        setCurrentUserId((userId as string | number | null) ?? null);
+        setCurrentDomain(domain || 'medical');
+      } catch (error) {
+        if (!cancelled) {
+          setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to load session' });
+        }
+      }
+    }
+
+    void init();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!currentDomain) return;
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const result = await getAppointmentsForDate(dateIso, currentDomain, currentUserId);
+        if (cancelled) return;
+        setAppointments((Array.isArray(result) ? result : []).map(normalizeSlot));
+        setStatus({ type: 'success', message: 'Appointments loaded' });
+      } catch (error) {
+        if (!cancelled) {
+          setAppointments([]);
+          setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to load appointments' });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [dateIso, currentDomain, currentUserId]);
+
+  useEffect(() => {
+    let seconds = 0;
+    let active = true;
+
+    const onVisibility = () => {
+      active = !document.hidden;
+    };
+
+    const onBlur = () => {
+      active = false;
+    };
+
+    const onFocus = () => {
+      active = true;
+    };
+
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
+
+    const timer = window.setInterval(() => {
+      if (active) seconds += 1;
+    }, 1000);
+
+    const flush = () => {
+      if (seconds > 0) void trackUsageTime(seconds);
+    };
+
+    window.addEventListener('beforeunload', flush);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('beforeunload', flush);
+      window.clearInterval(timer);
+      flush();
+    };
+  }, []);
+
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((slot) => {
+      const hasMessage = slot.msg.trim().length > 0;
+      if (filter === 'has') return hasMessage;
+      if (filter === 'none') return !hasMessage;
+      return true;
     });
+  }, [appointments, filter]);
+
+  const updateSlot = (index: number, key: 'name' | 'phone' | 'msg', value: string) => {
+    setAppointments((current) => current.map((slot, slotIndex) => (slotIndex === index ? { ...slot, [key]: value } : slot)));
   };
 
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveAppointments(dateIso, appointments, currentDomain, currentUserId);
+      setStatus({ type: 'success', message: 'Appointments saved' });
+    } catch (error) {
+      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to save appointments' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleLock = async (slot: AppointmentSlot) => {
+    try {
+      await lockAppointment(slot.no, currentDomain, dateIso, currentUserId);
+      setAppointments((current) => current.map((item) => (String(item.no) === String(slot.no) ? { ...item, locked: true } : item)));
+      setStatus({ type: 'success', message: `Appointment ${slot.no} locked` });
+    } catch (error) {
+      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to lock appointment' });
+    }
+  };
+
+  const handleClear = () => {
+    setAppointments((current) => current.map((slot) => ({ ...slot, msg: '' })));
+    setStatus({ type: 'info', message: 'Messages cleared locally' });
   };
 
   return (
-    <MedicalLayout title="Appointments">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button className="topbar-icon-btn" onClick={() => setWeekOffset(o => o - 1)} aria-label="Previous week">
-            <ChevronLeft size={16} />
-          </button>
-          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-lora)', minWidth: 200, textAlign: 'center' }}>
-            {formatDate(weekDates[0].toISOString(), 'short')} – {formatDate(weekDates[6].toISOString(), 'short')}, {weekDates[0].getFullYear()}
-          </span>
-          <button className="topbar-icon-btn" onClick={() => setWeekOffset(o => o + 1)} aria-label="Next week">
-            <ChevronRight size={16} />
-          </button>
-          <button className="btn-ghost btn-sm" onClick={() => setWeekOffset(0)}>Today</button>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
-            {(['week', 'list'] as const).map(v => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                style={{
-                  padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                  background: view === v ? 'var(--accent)' : 'transparent',
-                  color: view === v ? 'white' : 'var(--text-muted)',
-                  border: 'none', textTransform: 'capitalize',
-                }}
-              >
-                {v}
-              </button>
-            ))}
+    <MedicalLayout title="Appointments" breadcrumb="Binder scheduling">
+      <div className="medical-appointments-shell">
+        <div className="medical-appointments-toolbar card">
+          <div className="medical-appointments-toolbar__group">
+            <label className="medical-field-label" htmlFor="appointment-date">Date</label>
+            <div className="medical-date-field">
+              <Calendar size={16} />
+              <input
+                id="appointment-date"
+                className="medical-date-input"
+                type="date"
+                value={dateIso}
+                onChange={(event) => setDateIso(event.target.value)}
+              />
+            </div>
           </div>
-          <button className="btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Plus size={14} /> New Appointment
-          </button>
+
+          <div className="medical-appointments-toolbar__group">
+            <label className="medical-field-label" htmlFor="appointment-filter">Filter</label>
+            <div className="medical-date-field">
+              <Search size={16} />
+              <select
+                id="appointment-filter"
+                className="medical-date-input"
+                value={filter}
+                onChange={(event) => setFilter(event.target.value as FilterMode)}
+              >
+                <option value="all">All</option>
+                <option value="has">Has message</option>
+                <option value="none">No message</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="medical-appointments-toolbar__actions">
+            <button className="btn-ghost btn-sm" onClick={() => setDateIso(isoToday())}>
+              Today
+            </button>
+            <button className="btn-ghost btn-sm" onClick={() => setStatus({ type: 'info', message: `Viewing ${formatDate(dateIso, 'medium')}` })}>
+              <RefreshCcw size={14} />
+              Refresh
+            </button>
+            <button className="btn-primary btn-sm" onClick={handleSave} disabled={saving || loading}>
+              <Save size={14} />
+              {saving ? 'Saving...' : 'Save changes'}
+            </button>
+          </div>
+        </div>
+
+        {status ? <div className={`medical-status-banner medical-status-${status.type}`}>{status.message}</div> : null}
+
+        <div className="medical-appointments-summary">
+          <div className="card medical-summary-card">
+            <div className="medical-summary-label">Date</div>
+            <div className="medical-summary-value">{formatDate(dateIso, 'medium')}</div>
+          </div>
+          <div className="card medical-summary-card">
+            <div className="medical-summary-label">Visible slots</div>
+            <div className="medical-summary-value">{filteredAppointments.length}</div>
+          </div>
+          <div className="card medical-summary-card">
+            <div className="medical-summary-label">Working copy</div>
+            <div className="medical-summary-value">{appointments.length}</div>
+          </div>
+          <div className="card medical-summary-card">
+            <div className="medical-summary-label">Domain</div>
+            <div className="medical-summary-value">{currentDomain}</div>
+          </div>
+        </div>
+
+        <div className="medical-appointments-list">
+          {loading ? (
+            <div className="card medical-empty-state">Loading appointments...</div>
+          ) : filteredAppointments.length === 0 ? (
+            <div className="card medical-empty-state">No appointments found for this date.</div>
+          ) : (
+            filteredAppointments.map((slot, index) => (
+              <motion.div
+                key={`${slot.no}-${index}`}
+                className="card medical-appointment-card"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18, delay: index * 0.02 }}
+              >
+                <div className="medical-appointment-card__head">
+                  <div>
+                    <div className="medical-appointment-name">{slot.name}</div>
+                    <div className="medical-appointment-meta">
+                      <span>No. {slot.no}</span>
+                      <span>{slot.phone || 'No phone'}</span>
+                    </div>
+                  </div>
+                  <div className="medical-appointment-badges">
+                    {slot.locked ? <Badge status="success" size="sm">Locked</Badge> : <Badge status="info" size="sm">Open</Badge>}
+                    <button className="btn-ghost btn-sm" onClick={() => void handleLock(slot)} disabled={slot.locked}>
+                      <Lock size={14} />
+                      Lock
+                    </button>
+                  </div>
+                </div>
+
+                <div className="medical-appointment-grid">
+                  <label className="medical-input-group">
+                    <span className="medical-field-label">Name</span>
+                    <div className="medical-input-with-icon">
+                      <UserCircle2 size={16} />
+                      <input
+                        className="medical-date-input"
+                        value={slot.name}
+                        onChange={(event) => updateSlot(index, 'name', event.target.value)}
+                      />
+                    </div>
+                  </label>
+
+                  <label className="medical-input-group">
+                    <span className="medical-field-label">Phone</span>
+                    <input
+                      className="medical-date-input"
+                      value={slot.phone}
+                      onChange={(event) => updateSlot(index, 'phone', event.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <label className="medical-input-group">
+                  <span className="medical-field-label">Message</span>
+                  <textarea
+                    className="medical-message-box"
+                    rows={4}
+                    value={slot.msg}
+                    onChange={(event) => updateSlot(index, 'msg', event.target.value)}
+                  />
+                </label>
+
+                <div className="medical-appointment-actions">
+                  <button className="btn-ghost btn-sm" onClick={handleClear}>
+                    Clear all messages
+                  </button>
+                  <button className="btn-primary btn-sm" onClick={handleSave} disabled={saving}>
+                    <Check size={14} />
+                    Save
+                  </button>
+                </div>
+              </motion.div>
+            ))
+          )}
         </div>
       </div>
-
-      {view === 'week' ? (
-        <div className="card" style={{ overflowX: 'auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '56px repeat(7, 1fr)', minWidth: 700 }}>
-            {/* Header row */}
-            <div style={{ borderBottom: '1px solid var(--border)', padding: '8px 0' }} />
-            {weekDates.map((date, i) => (
-              <div key={i} style={{ textAlign: 'center', padding: '10px 4px', borderBottom: '1px solid var(--border)', background: isToday(date) ? 'var(--accent-light)' : 'transparent' }}>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>{DAYS[i]}</div>
-                <div style={{
-                  fontSize: 18, fontWeight: 700,
-                  fontFamily: 'var(--font-lora)',
-                  width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  borderRadius: '50%', margin: '4px auto 0',
-                  background: isToday(date) ? 'var(--accent)' : 'transparent',
-                  color: isToday(date) ? 'white' : 'var(--text)',
-                }}>
-                  {date.getDate()}
-                </div>
-              </div>
-            ))}
-
-            {/* Time slots */}
-            {HOURS.map(hour => (
-              <>
-                <div key={`h${hour}`} style={{ padding: '0 8px', textAlign: 'right', borderBottom: '1px solid var(--border-light)', fontSize: 11, color: 'var(--text-light)', paddingTop: 4, height: 64, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
-                  {hour > 12 ? `${hour - 12}pm` : hour === 12 ? '12pm' : `${hour}am`}
-                </div>
-                {weekDates.map((date, di) => {
-                  const appts = getApptForDayHour(date, hour);
-                  return (
-                    <div key={`${hour}-${di}`} style={{ borderBottom: '1px solid var(--border-light)', borderLeft: '1px solid var(--border-light)', height: 64, position: 'relative', padding: '2px', background: isToday(date) ? 'rgba(206,122,53,0.02)' : 'transparent' }}>
-                      {appts.map(appt => (
-                        <motion.div
-                          key={appt.id}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="appointment-slot"
-                          style={{ background: appt.colorCode, opacity: appt.status === 'Completed' ? 0.6 : 1 }}
-                          title={`${appt.attendeeName} — ${appt.appointmentType}`}
-                        >
-                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 10 }}>{appt.attendeeName}</div>
-                          <div style={{ fontSize: 9, opacity: 0.85 }}>{appt.appointmentType}</div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  );
-                })}
-              </>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="card">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {medAppts.sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map((appt, i) => (
-              <motion.div
-                key={appt.id}
-                initial={{ opacity: 0, x: -4 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.03 }}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border-light)', borderLeft: `3px solid ${appt.colorCode}` }}
-              >
-                <div style={{ width: 80, fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{formatDate(appt.date, 'short')}</div>
-                <div style={{ width: 50, fontSize: 12, fontWeight: 700, color: 'var(--accent)', fontFamily: 'var(--font-mono)' }}>{appt.time}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{appt.attendeeName}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{appt.appointmentType} · {appt.hostName} · {appt.duration}min</div>
-                </div>
-                <Badge status={appt.status} size="sm" />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
     </MedicalLayout>
   );
 }

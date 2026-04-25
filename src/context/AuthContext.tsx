@@ -31,7 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
-  const login = useCallback(async (_email: string, _password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
+    void email;
+    void password;
     await new Promise(resolve => setTimeout(resolve, 800));
     localStorage.setItem('gradicent_token', 'dev-token-gradicent-2024');
     localStorage.setItem('gradicent_user', JSON.stringify(MOCK_USER));

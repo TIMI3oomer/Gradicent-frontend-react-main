@@ -77,7 +77,7 @@ export function PatientDetail() {
               ))}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+          <div className="medical-hero-actions">
             <button className="btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <Edit2 size={13} /> Edit
             </button>
@@ -93,7 +93,7 @@ export function PatientDetail() {
       </motion.div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--border)', marginBottom: 20 }}>
+      <div className="medical-tabs">
         {TABS.map(tab => (
           <button
             key={tab}
@@ -121,7 +121,7 @@ export function PatientDetail() {
         <div className="two-col">
           <div className="card">
             <div className="card-title" style={{ marginBottom: 16 }}>Patient Information</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="medical-detail-grid">
               {[
                 { label: 'Email', value: patient.email },
                 { label: 'Phone', value: patient.phone },
@@ -131,7 +131,7 @@ export function PatientDetail() {
                 { label: 'Last Visit', value: formatDate(patient.lastVisit, 'medium') },
                 { label: 'Next Appointment', value: patient.nextAppointment ? formatDate(patient.nextAppointment, 'medium') : 'Not scheduled' },
               ].map(({ label, value }) => (
-                <div key={label} style={{ gridColumn: label === 'Address' || label === 'Email' ? 'span 2' : undefined }}>
+                <div key={label} className={label === 'Address' || label === 'Email' ? 'medical-span-2' : undefined}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>{label}</div>
                   <div style={{ fontSize: 13, color: 'var(--text)' }}>{value}</div>
                 </div>
@@ -195,7 +195,7 @@ export function PatientDetail() {
       {activeTab === 'Insurance' && (
         <div className="card" style={{ maxWidth: 600 }}>
           <div className="card-title" style={{ marginBottom: 20 }}>Insurance Information</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          <div className="medical-detail-grid">
             {[
               { label: 'Insurance Provider', value: patient.insuranceProvider },
               { label: 'Policy Number', value: patient.policyNumber },

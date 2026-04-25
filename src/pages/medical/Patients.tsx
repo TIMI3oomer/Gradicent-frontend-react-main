@@ -11,6 +11,7 @@ import { mockPatients } from '../../data/patients';
 import { useDebounce } from '../../hooks/useDebounce';
 import { formatDate } from '../../lib/formatters';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { MEDICAL_ROUTES } from '../../lib/constants';
 
 const PAGE_SIZE = 12;
 
@@ -66,7 +67,7 @@ export function Patients() {
   ];
 
   return (
-    <MedicalLayout title="Patients" actionLabel="Add Patient" actionPath="/medical/add-patient">
+    <MedicalLayout title="Patients" actionLabel="Add Patient" actionPath={MEDICAL_ROUTES.ADD_PATIENT}>
       {/* Filters */}
       <div className="card" style={{ marginBottom: 20 }}>
         <div className="filter-row">

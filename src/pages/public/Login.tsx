@@ -35,9 +35,9 @@ export function Login() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div className="login-shell" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
       {/* Left brand panel */}
-      <div style={{ flex: '0 0 40%', background: 'linear-gradient(145deg, #1B427A 0%, #0D2952 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 48px', position: 'relative', overflow: 'hidden' }}>
+      <div className="login-brand-panel" style={{ background: 'linear-gradient(145deg, #1B427A 0%, #0D2952 100%)' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0)', backgroundSize: '28px 28px' }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
@@ -65,7 +65,7 @@ export function Login() {
       </div>
 
       {/* Right form panel */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '40px 48px', background: '#F7F9FC' }}>
+      <div className="login-form-panel" style={{ background: '#F7F9FC' }}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

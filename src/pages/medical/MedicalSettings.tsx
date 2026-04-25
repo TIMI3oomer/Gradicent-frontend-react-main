@@ -23,9 +23,9 @@ export function MedicalSettings() {
 
   return (
     <MedicalLayout title="Settings">
-      <div style={{ display: 'flex', gap: 24 }}>
+      <div className="medical-settings-shell">
         {/* Left nav */}
-        <div style={{ width: 180, flexShrink: 0 }}>
+        <div className="medical-settings-nav">
           {TABS.map(t => (
             <button
               key={t}
@@ -45,11 +45,11 @@ export function MedicalSettings() {
         </div>
 
         {/* Content */}
-        <div style={{ flex: 1, maxWidth: 560 }}>
+        <div className="medical-settings-panel">
           {tab === 'Profile' && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: 20 }}>Profile Information</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="medical-form-grid">
                 {[
                   { label: 'Full Name', value: user?.name, id: 'pname' },
                   { label: 'Email', value: user?.email, id: 'pemail' },
@@ -101,7 +101,7 @@ export function MedicalSettings() {
           {tab === 'Clinic Info' && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: 20 }}>Clinic Information</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="medical-form-grid">
                 {[
                   { label: 'Clinic Name', id: 'cname', value: 'Gradicent Medical Center' },
                   { label: 'Phone', id: 'cphone', value: '(555) 800-9000' },
@@ -113,7 +113,7 @@ export function MedicalSettings() {
                     <input id={f.id} className="form-input" defaultValue={f.value} />
                   </div>
                 ))}
-                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div className="form-group medical-span-2">
                   <label className="form-label" htmlFor="caddress">Address</label>
                   <input id="caddress" className="form-input" defaultValue="500 Medical Drive, Portland, OR 97201" />
                 </div>

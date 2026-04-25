@@ -13,6 +13,7 @@ import { mockAppointments } from '../../data/appointments';
 import { formatDate, formatRelativeTime } from '../../lib/formatters';
 import { useAuth } from '../../context/AuthContext';
 import type { Column } from '../../components/shared/DataTable/DataTable';
+import { MEDICAL_ROUTES } from '../../lib/constants';
 
 const recentVisits = mockPatients.slice(0, 8).map(p => ({
   id: p.id,
@@ -55,7 +56,7 @@ export function MedicalHome() {
   ];
 
   return (
-    <MedicalLayout title={`Good ${greeting}, ${user?.name?.split(' ')[0] ?? 'Doctor'}`} actionLabel="Add Patient" actionPath="/medical/add-patient">
+    <MedicalLayout title={`Good ${greeting}, ${user?.name?.split(' ')[0] ?? 'Doctor'}`} actionLabel="Add Patient" actionPath={MEDICAL_ROUTES.ADD_PATIENT}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}

@@ -8,6 +8,7 @@ import { PlanBadge } from '../../components/business/PlanBadge';
 import { Avatar } from '../../components/shared/Avatar';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Pagination } from '../../components/shared/Pagination';
+import { BUSINESS_ROUTES } from '../../lib/constants';
 import { mockClients } from '../../data/clients';
 import { formatCurrency, formatDate } from '../../lib/formatters';
 import type { Client } from '../../types';
@@ -102,7 +103,7 @@ export function Clients() {
             <button className={view === 'table' ? 'btn-primary btn-sm' : 'btn-ghost btn-sm'} onClick={() => setView('table')} style={{ padding: '4px 8px' }}><List size={14} /></button>
             <button className={view === 'cards' ? 'btn-primary btn-sm' : 'btn-ghost btn-sm'} onClick={() => setView('cards')} style={{ padding: '4px 8px' }}><LayoutGrid size={14} /></button>
           </div>
-          <button className="btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button className="btn-primary btn-sm" onClick={() => navigate(BUSINESS_ROUTES.CLIENTS_ADD)} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Plus size={14} /> Add Client
           </button>
         </div>

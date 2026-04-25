@@ -17,7 +17,7 @@ export function MedicalAccount() {
               <div style={{ fontSize: 12, color: 'var(--accent)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>{user?.licenseNumber}</div>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="medical-detail-grid">
             {[
               { label: 'Email', value: user?.email },
               { label: 'Plan', value: user?.plan },

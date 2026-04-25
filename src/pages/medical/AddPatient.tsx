@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CircleCheck as CheckCircle2 } from 'lucide-react';
 import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
+import { MEDICAL_ROUTES } from '../../lib/constants';
 
 const STEPS = ['Personal Information', 'Medical Information', 'Assignment & Scheduling'];
 
@@ -26,7 +27,7 @@ export function AddPatient() {
     await new Promise(r => setTimeout(r, 1200));
     setLoading(false);
     setDone(true);
-    setTimeout(() => navigate('/medical/patients'), 1800);
+    setTimeout(() => navigate(MEDICAL_ROUTES.PATIENTS), 1800);
   };
 
   return (
@@ -81,8 +82,8 @@ export function AddPatient() {
               </h3>
 
               {step === 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                <div className="medical-form-grid">
+                  <div className="form-group medical-span-2">
                     <label className="form-label" htmlFor="name">Full Name *</label>
                     <input id="name" className="form-input" placeholder="First Last" value={form.name} onChange={e => update('name', e.target.value)} />
                   </div>
@@ -106,7 +107,7 @@ export function AddPatient() {
                     <label className="form-label" htmlFor="email">Email</label>
                     <input id="email" className="form-input" type="email" placeholder="patient@email.com" value={form.email} onChange={e => update('email', e.target.value)} />
                   </div>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <div className="form-group medical-span-2">
                     <label className="form-label" htmlFor="address">Address</label>
                     <input id="address" className="form-input" placeholder="123 Main St, City, State ZIP" value={form.address} onChange={e => update('address', e.target.value)} />
                   </div>
@@ -122,8 +123,8 @@ export function AddPatient() {
               )}
 
               {step === 1 && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <div className="medical-form-grid">
+                    <div className="form-group medical-span-2">
                     <label className="form-label" htmlFor="condition">Primary Condition *</label>
                     <input id="condition" className="form-input" placeholder="e.g. Hypertension" value={form.condition} onChange={e => update('condition', e.target.value)} />
                   </div>
@@ -139,11 +140,11 @@ export function AddPatient() {
                     <label className="form-label" htmlFor="policyNumber">Policy Number</label>
                     <input id="policyNumber" className="form-input" value={form.policyNumber} onChange={e => update('policyNumber', e.target.value)} />
                   </div>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <div className="form-group medical-span-2">
                     <label className="form-label" htmlFor="medications">Current Medications</label>
                     <textarea id="medications" className="form-input form-textarea" placeholder="List medications..." value={form.medications} onChange={e => update('medications', e.target.value)} />
                   </div>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <div className="form-group medical-span-2">
                     <label className="form-label" htmlFor="history">Medical History</label>
                     <textarea id="history" className="form-input form-textarea" value={form.history} onChange={e => update('history', e.target.value)} />
                   </div>
@@ -151,8 +152,8 @@ export function AddPatient() {
               )}
 
               {step === 2 && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <div className="medical-form-grid">
+                    <div className="form-group medical-span-2">
                     <label className="form-label" htmlFor="doctor">Assign Doctor *</label>
                     <select id="doctor" className="form-input form-select" value={form.doctor} onChange={e => update('doctor', e.target.value)}>
                       <option value="">Select a doctor...</option>
@@ -165,11 +166,11 @@ export function AddPatient() {
                     <label className="form-label" htmlFor="appointmentDate">First Appointment (Optional)</label>
                     <input id="appointmentDate" className="form-input" type="datetime-local" value={form.appointmentDate} onChange={e => update('appointmentDate', e.target.value)} />
                   </div>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                    <div className="form-group medical-span-2">
                     <label className="form-label" htmlFor="notes">Additional Notes</label>
                     <textarea id="notes" className="form-input form-textarea" value={form.notes} onChange={e => update('notes', e.target.value)} />
                   </div>
-                  <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                  <div className="form-group medical-span-2">
                     <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
                       <input
                         type="checkbox"
@@ -186,7 +187,7 @@ export function AddPatient() {
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 20, borderTop: '1px solid var(--border)', marginTop: 20 }}>
                 <button
                   className="btn-ghost btn-md"
-                  onClick={() => step === 0 ? navigate('/medical/patients') : setStep(s => s - 1)}
+                  onClick={() => step === 0 ? navigate(MEDICAL_ROUTES.PATIENTS) : setStep(s => s - 1)}
                 >
                   {step === 0 ? 'Cancel' : '← Back'}
                 </button>
