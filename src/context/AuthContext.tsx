@@ -94,12 +94,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = useCallback((domain: string) => {
     const currentFrontendUrl = window.location.origin;
+    
+    const frontendCallbackRoute = `${currentFrontendUrl}/auth/callback`;
 
-    const redirect_uri=`${encodeURIComponent(currentFrontendUrl)}/${domain}`;
-
-    window.location.href = `${API_BASE_URL}/start?provider=google&domain=${encodeURIComponent(domain)}&redirect_uri=${encodeURIComponent(redirect_uri)}`;
+    window.location.href = `${API_BASE_URL}/start?provider=google&domain=${encodeURIComponent(domain)}&frontend_callback=${encodeURIComponent(frontendCallbackRoute)}`;
   }, []);
-
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, loginWithGoogle, logout }}>
       {!loading && children}
