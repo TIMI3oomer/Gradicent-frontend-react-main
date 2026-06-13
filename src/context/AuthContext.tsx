@@ -15,7 +15,7 @@ import type { User } from '../types';
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
-  loading: boolean;
+  isLoading: boolean;
   login: (email: string, password: string, domain: string) => Promise<void>;
   loginWithGoogle: (domain: string) => void; // Sync operation because it triggers a full page redirect
   logout: (domain?: string) => Promise<void>;
@@ -32,7 +32,7 @@ const API_BASE_URL = 'https://gradicent-api.vercel.app/api/auth';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkCurrentUser = async () => {
@@ -100,8 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = `${API_BASE_URL}/start?provider=google&domain=${encodeURIComponent(domain)}&frontend_callback=${encodeURIComponent(frontendCallbackRoute)}`;
   }, []);
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, loginWithGoogle, logout }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, loginWithGoogle, logout }}>
+      {!isLoading && children}
     </AuthContext.Provider>
   );
 }
