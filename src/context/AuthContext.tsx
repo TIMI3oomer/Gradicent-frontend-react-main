@@ -6,28 +6,19 @@ import {
   useEffect,
   type ReactNode,
 } from 'react';
-import { useNavigate } from 'react-router-dom';
 import type { User } from '../types';
-
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, domain: string) => Promise<void>;
-  loginWithGoogle: (domain: string) => void; // Sync operation because it triggers a full page redirect
+  loginWithGoogle: (domain: string) => void; 
   logout: (domain?: string) => Promise<void>;
-}
-
-interface AuthError extends Error {
-  code: 'INVALID_CREDENTIALS' | 'NETWORK_ERROR' | 'SERVER_ERROR';
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-// Configure your Flask API base URL here
 const API_BASE_URL = 'https://gradicent-api.vercel.app/api/auth'; 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,21 +27,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkCurrentUser = async () => {
-      try {
-        const token = localStorage.getItem('gradicent_access_token');
-        const authHeaders: Record<string, string> = {};
-        
-        if (token) {
-          authHeaders['Authorization'] = `Bearer ${token}`;
-        }
+      const token = localStorage.getItem('gradicent_access_token');
+      
+      // If there's no token and no local session, we can stop loading early
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
-        // credentials: 'include' ensures Flask session cookies are transmitted
-        const res = await fetch(`${API_BASE_URL}/me`, { credentials: 'include', headers: authHeaders });
+      try {
+        const res = await fetch(`${API_BASE_URL}/me`, { 
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Crucial header link
+          },
+          credentials: 'include' 
+        });
+
         if (res.ok) {
           const json = await res.json();
           if (json.status === 'success' && json.data) {
-            setUser(json.data); // Normalized user structure returned by backend
+            setUser(json.data); 
+          } else {
+            // Token is invalid/expired
+            localStorage.removeItem('gradicent_access_token');
           }
+        } else {
+          localStorage.removeItem('gradicent_access_token');
         }
       } catch (err) {
         console.error('Failed to restore auth session:', err);
@@ -63,8 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string, domain: string) => {
-    // Note: auth_routes.py snippet only handles OAuth natively. If you have a password route, 
-    // ensure it processes the domain payload exactly like this block.
     const res = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -77,37 +79,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(json.message || 'Authentication failed');
     }
 
-    setUser(json.data.user);
+    // Save token if returned inside the login response structure
+    if (json.data?.token || json.data?.access_token) {
+      localStorage.setItem('gradicent_access_token', json.data.token || json.data.access_token);
+    } else if (json.token) {
+      localStorage.setItem('gradicent_access_token', json.token);
+    }
+
+    setUser(json.data.user || json.data);
   }, []);
 
-
   const logout = useCallback(async (domain: string = 'business') => {
+    const token = localStorage.getItem('gradicent_access_token');
     try {
       await fetch(`${API_BASE_URL}/signout`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ domain }),
         credentials: 'include'
       });
     } catch (err) {
       console.error('Logout request failed:', err);
     } finally {
-      // Always reset local context state regardless of backend errors
+      // Complete cleanup
+      localStorage.removeItem('gradicent_access_token');
+      localStorage.removeItem('gradicent_user');
       setUser(null);
       window.location.href = '/login';
     }
   }, []);
 
-
   const loginWithGoogle = useCallback((domain: string) => {
     const currentFrontendUrl = window.location.origin;
-    
     const frontendCallbackRoute = `${currentFrontendUrl}/auth/callback`;
 
     window.location.href = `${API_BASE_URL}/start?provider=google&domain=${encodeURIComponent(domain)}&frontend_callback=${encodeURIComponent(frontendCallbackRoute)}`;
   }, []);
+
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isAuthenticated: !!user, 
+        isLoading, 
+        login, 
+        loginWithGoogle, 
+        logout 
+      }}
+    >
       {!isLoading && children}
     </AuthContext.Provider>
   );
