@@ -84,7 +84,7 @@ export function BusinessSidebar() {
             </span>
           </div>
         </div>
-        <button className="sidebar-logout-btn" onClick={logout} style={{ color: '#5A7090' }}>
+        <button className="sidebar-logout-btn" onClick={() => logout('business')} style={{ color: '#5A7090' }}>
           <LogOut size={13} aria-hidden="true" />
           Logout
         </button>
