@@ -1,5 +1,15 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { User } from '../types';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AuthContextValue {
   user: User | null;
@@ -10,7 +20,9 @@ interface AuthContextValue {
   logout: (domain?: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+interface AuthError extends Error {
+  code: 'INVALID_CREDENTIALS' | 'NETWORK_ERROR' | 'SERVER_ERROR';
+}
 
 // Configure your Flask API base URL here
 const API_BASE_URL = 'https://gradicent-api.vercel.app/api/auth'; 
@@ -78,6 +90,85 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.href = '/login';
     }
   }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+  setIsLoading(true);
+
+  try {
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    if (response.status === 401) {
+      throw createAuthError(
+        'Invalid email or password.',
+        'INVALID_CREDENTIALS'
+      );
+    }
+
+    if (!response.ok) {
+      throw createAuthError(
+        'Failed to authenticate.',
+        'SERVER_ERROR'
+      );
+    }
+
+    const { user } = await response.json();
+
+    setUser(user);
+
+    localStorage.setItem(
+      'gradicent_user',
+      JSON.stringify({
+        ...user,
+        _storedAt: Date.now(),
+      })
+    );
+  } catch (err) {
+    if ((err as AuthError).code) throw err;
+
+    throw createAuthError(
+      'Network error.',
+      'NETWORK_ERROR'
+    );
+  } finally {
+    setIsLoading(false);
+  }
+}, []);
+
+const loginWithGoogle = useCallback(() => {
+  const state = crypto.randomUUID();
+
+  sessionStorage.setItem('oauth_state', state);
+
+  window.location.href =
+    `https://gradicent-api.vercel.app/api/auth/start?state=${encodeURIComponent(state)}`;
+}, []);
+
+  const logout = useCallback(async () => {
+    try {
+      if (!import.meta.env.DEV) {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include',
+        });
+      }
+    } finally {
+      localStorage.removeItem('gradicent_token');
+      localStorage.removeItem('gradicent_user');
+      sessionStorage.removeItem('oauth_state');
+      setUser(null);
+      navigate('/login');
+    }
+  }, [navigate]);
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, loginWithGoogle, logout }}>
