@@ -9,158 +9,98 @@ import {
 import { useNavigate } from 'react-router-dom';
 import type { User } from '../types';
 
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: () => void;
-  logout: () => void;
+  loading: boolean;
+  login: (email: string, password: string, domain: string) => Promise<void>;
+  loginWithGoogle: (domain: string) => void; // Sync operation because it triggers a full page redirect
+  logout: (domain?: string) => Promise<void>;
 }
 
 interface AuthError extends Error {
   code: 'INVALID_CREDENTIALS' | 'NETWORK_ERROR' | 'SERVER_ERROR';
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function getStoredUser(): User | null {
-  try {
-    const raw = localStorage.getItem('gradicent_user');
-    if (!raw) return null;
-
-    const parsed = JSON.parse(raw) as User & { _storedAt?: number };
-    const TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
-
-    if (parsed._storedAt && Date.now() - parsed._storedAt > TOKEN_TTL_MS) {
-      localStorage.removeItem('gradicent_user');
-      localStorage.removeItem('gradicent_token');
-      return null;
-    }
-
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function createAuthError(
-  message: string,
-  code: AuthError['code']
-): AuthError {
-  const err = new Error(message) as AuthError;
-  err.code = code;
-  return err;
-}
-
-// ─── Context ──────────────────────────────────────────────────────────────────
-
-const AuthContext = createContext<AuthContextValue | null>(null);
+// Configure your Flask API base URL here
+const API_BASE_URL = 'https://gradicent-api.vercel.app/api/auth'; 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
-  // Rehydrate on mount (avoids SSR mismatch and isolates storage access)
   useEffect(() => {
-    setUser(getStoredUser());
-    setIsLoading(false);
+    const checkCurrentUser = async () => {
+      try {
+        // credentials: 'include' ensures Flask session cookies are transmitted
+        const res = await fetch(`${API_BASE_URL}/me`, { credentials: 'include' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status === 'success' && json.data) {
+            setUser(json.data); // Normalized user structure returned by backend
+          }
+        }
+      } catch (err) {
+        console.error('Failed to restore auth session:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkCurrentUser();
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-  setIsLoading(true);
-
-  try {
-    const response = await fetch('/api/auth/login', {
+  const login = useCallback(async (email: string, password: string, domain: string) => {
+    // Note: auth_routes.py snippet only handles OAuth natively. If you have a password route, 
+    // ensure it processes the domain payload exactly like this block.
+    const res = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        email,
-        password,
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, domain }),
+      credentials: 'include'
     });
 
-    if (response.status === 401) {
-      throw createAuthError(
-        'Invalid email or password.',
-        'INVALID_CREDENTIALS'
-      );
+    const json = await res.json();
+    if (!res.ok || json.status === 'error') {
+      throw new Error(json.message || 'Authentication failed');
     }
 
-    if (!response.ok) {
-      throw createAuthError(
-        'Failed to authenticate.',
-        'SERVER_ERROR'
-      );
-    }
+    setUser(json.data.user);
+  }, []);
 
-    const { user } = await response.json();
 
-    setUser(user);
-
-    localStorage.setItem(
-      'gradicent_user',
-      JSON.stringify({
-        ...user,
-        _storedAt: Date.now(),
-      })
-    );
-  } catch (err) {
-    if ((err as AuthError).code) throw err;
-
-    throw createAuthError(
-      'Network error.',
-      'NETWORK_ERROR'
-    );
-  } finally {
-    setIsLoading(false);
-  }
-}, []);
-
-const loginWithGoogle = useCallback(() => {
-  const state = crypto.randomUUID();
-
-  sessionStorage.setItem('oauth_state', state);
-
-  window.location.href =
-    `https://gradicent-api.vercel.app/api/auth/start?state=${encodeURIComponent(state)}`;
-}, []);
-
-  const logout = useCallback(async () => {
+  const logout = useCallback(async (domain: string = 'business') => {
     try {
-      if (!import.meta.env.DEV) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          credentials: 'include',
-        });
-      }
+      await fetch(`${API_BASE_URL}/signout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain }),
+        credentials: 'include'
+      });
+    } catch (err) {
+      console.error('Logout request failed:', err);
     } finally {
-      localStorage.removeItem('gradicent_token');
-      localStorage.removeItem('gradicent_user');
-      sessionStorage.removeItem('oauth_state');
+      // Always reset local context state regardless of backend errors
       setUser(null);
-      navigate('/login');
+      window.location.href = '/login';
     }
-  }, [navigate]);
+  }, []);
+
+
+  const loginWithGoogle = useCallback((domain: string) => {
+    const currentFrontendUrl = window.location.origin;
+
+    window.location.href = `${API_BASE_URL}/start?provider=google&domain=${encodeURIComponent(domain)}&redirect_uri=${encodeURIComponent(currentFrontendUrl)}`;
+  }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        loginWithGoogle,
-        logout,
-      }}
-    >
-      {children}
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, loading, login, loginWithGoogle, logout }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
