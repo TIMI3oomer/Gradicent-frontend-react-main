@@ -37,8 +37,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkCurrentUser = async () => {
       try {
+        const token = localStorage.getItem('gradicent_access_token');
+        const authHeaders: Record<string, string> = {};
+        
+        if (token) {
+          authHeaders['Authorization'] = `Bearer ${token}`;
+        }
+
         // credentials: 'include' ensures Flask session cookies are transmitted
-        const res = await fetch(`${API_BASE_URL}/me`, { credentials: 'include' });
+        const res = await fetch(`${API_BASE_URL}/me`, { credentials: 'include', headers: authHeaders });
         if (res.ok) {
           const json = await res.json();
           if (json.status === 'success' && json.data) {
