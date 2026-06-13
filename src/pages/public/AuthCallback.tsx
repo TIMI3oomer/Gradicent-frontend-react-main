@@ -8,7 +8,7 @@ export function AuthCallback() {
   useEffect(() => {
     const finishLogin = async () => {
       try {
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch('https://gradicent-api.vercel.app/api/auth/me', {
           credentials: 'include',
         });
 
