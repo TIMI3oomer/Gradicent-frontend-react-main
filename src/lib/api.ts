@@ -32,7 +32,7 @@ function toQueryString(query: QueryInput) {
 }
 
 function appendQuery(url: string, query: QueryInput) {
-  return `${baseURL}${url}${toQueryString(query)}`;
+  return `${url}${toQueryString(query)}`;
 }
 
 async function readResponse(res: Response) {
@@ -70,6 +70,14 @@ export async function safeFetch(url: string, opts: RequestInitWithTimeout = {}):
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   let res: Response;
+  url = url.startsWith('http') ? url : `${baseURL}${url}`;
+
+  const token = localStorage.getItem('gradicent_access_token');
+  const authHeaders: Record<string, string> = {};
+  
+  if (token) {
+    authHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   try {
     res = await fetch(url, {
@@ -78,6 +86,7 @@ export async function safeFetch(url: string, opts: RequestInitWithTimeout = {}):
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,        
         ...requestInit.headers,
       },
     });
