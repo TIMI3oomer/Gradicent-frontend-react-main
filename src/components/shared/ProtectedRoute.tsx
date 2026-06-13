@@ -1,13 +1,13 @@
-import { Navigate, useLocation } from 'react-router-dom';
+// components/shared/ProtectedRoute.tsx
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  const location = useLocation();
+export function ProtectedRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
-  }
+  if (isLoading) return null; // or a <PageSpinner />
 
-  return <>{children}</>;
+  return isAuthenticated
+    ? <Outlet />
+    : <Navigate to="/login" replace />;
 }
