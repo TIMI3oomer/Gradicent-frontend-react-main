@@ -129,7 +129,7 @@ const loginWithGoogle = useCallback(() => {
   sessionStorage.setItem('oauth_state', state);
 
   window.location.href =
-    `/api/auth/start?state=${encodeURIComponent(state)}`;
+    `https://gradicent-api.vercel.app/api/auth/start?state=${encodeURIComponent(state)}`;
 }, []);
 
   const logout = useCallback(async () => {
