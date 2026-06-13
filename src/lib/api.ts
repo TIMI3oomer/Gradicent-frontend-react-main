@@ -5,6 +5,8 @@ type RequestInitWithTimeout = RequestInit & { timeoutMs?: number };
 type QueryInput = string | URLSearchParams | Record<string, string | number | boolean | null | undefined> | null | undefined;
 type ApiResponse = JsonRecord & { data?: unknown; message?: string };
 
+const baseURL = "https://gradicent-api.vercel.app";
+
 function asMessage(value: unknown, fallback: string) {
   if (typeof value === 'string' && value.trim()) return value;
   return fallback;
@@ -30,7 +32,7 @@ function toQueryString(query: QueryInput) {
 }
 
 function appendQuery(url: string, query: QueryInput) {
-  return `${url}${toQueryString(query)}`;
+  return `${baseURL}${url}${toQueryString(query)}`;
 }
 
 async function readResponse(res: Response) {
