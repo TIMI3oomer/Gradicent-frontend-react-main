@@ -39,7 +39,7 @@ export function MedicalAccount() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn-primary btn-sm">Upgrade Plan</button>
-            <button className="btn-ghost btn-sm" onClick={logout} style={{ color: 'var(--danger)' }}>Sign Out</button>
+            <button className="btn-ghost btn-sm" onClick={() => logout('medical')} style={{ color: 'var(--danger)' }}>Sign Out</button>
           </div>
         </div>
       </div>

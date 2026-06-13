@@ -49,7 +49,7 @@ export function MedicalSidebar() {
             <div className="sidebar-user-role">{user?.specialty ?? 'Physician'}</div>
           </div>
         </div>
-        <button className="sidebar-logout-btn" onClick={logout}>
+        <button className="sidebar-logout-btn" onClick={() => logout('medical')}>
           <SignOut size={14} aria-hidden="true" />
           Logout
         </button>
