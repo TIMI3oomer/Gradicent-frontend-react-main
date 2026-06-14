@@ -19,7 +19,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const API_BASE_URL = 'https://gradicent-api.vercel.app/api/auth'; 
+const API_BASE_URL = 'https://api.bindersoftware.com/api/auth'; 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

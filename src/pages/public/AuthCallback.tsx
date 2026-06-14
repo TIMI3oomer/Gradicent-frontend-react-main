@@ -15,7 +15,7 @@ export function AuthCallback() {
       }
 
       try {
-        const response = await fetch('https://gradicent-api.vercel.app/api/auth/me', {
+        const response = await fetch('https://api.bindersoftware.com/api/auth/me', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
