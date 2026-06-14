@@ -1,23 +1,37 @@
-
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export function AuthCallback() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     const finishLogin = async () => {
+      const token = searchParams.get('token');
+      const domain = searchParams.get('domain') || 'medical';
+
+      if (token) {
+        localStorage.setItem('gradicent_access_token', token);
+      }
+
       try {
         const response = await fetch('https://gradicent-api.vercel.app/api/auth/me', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
           credentials: 'include',
         });
 
         if (!response.ok) {
+          console.error('Failed to verify session status code:', response.status);
           navigate('/login');
           return;
         }
 
-        const { user } = await response.json();
+        const json = await response.json();
+        const user = json.data || json.user;
 
         localStorage.setItem(
           'gradicent_user',
@@ -27,14 +41,22 @@ export function AuthCallback() {
           })
         );
 
-        navigate('/medical/home');
-      } catch {
+        navigate(`/${domain}/home`);
+      } catch (err) {
+        console.error('Error processing authentication token sync:', err);
         navigate('/login');
       }
     };
 
     void finishLogin();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
-  return <div>Signing you in...</div>;
+  return (
+    <div style={{ display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center', background: '#F7F9FC', fontFamily: 'system-ui, sans-serif' }}>
+      <div style={{ textAlign: 'center' }}>
+        <h3 style={{ marginBottom: 6, fontWeight: 600, color: '#1A2332' }}>Securing Workspace Session...</h3>
+        <p style={{ color: '#8B9AB0', fontSize: 14 }}>Preparing your dashboard setup.</p>
+      </div>
+    </div>
+  );
 }
