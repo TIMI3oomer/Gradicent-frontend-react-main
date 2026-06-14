@@ -31,7 +31,8 @@ export function AuthCallback() {
         }
 
         const json = await response.json();
-        const user = json.data || json.user;
+        const user = json.data;
+        console.log('Authenticated user data:', user);
 
         localStorage.setItem(
           'gradicent_user',
@@ -41,6 +42,7 @@ export function AuthCallback() {
           })
         );
 
+        console.log(`/${domain}/home`);
         navigate(`/${domain}/home`);
       } catch (err) {
         console.error('Error processing authentication token sync:', err);
