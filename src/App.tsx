@@ -13,7 +13,6 @@ import { Login } from './pages/public/Login';
 import { MedicalLanding } from './pages/public/MedicalLanding';
 import { Products } from './pages/public/Products';
 import { Privacy } from './pages/public/Privacy';
-import { AuthCallback } from './pages/public/AuthCallback';
 import { Terms } from './pages/public/Terms';
 import { NotFound } from './pages/public/NotFound';
 
@@ -60,7 +59,6 @@ function AnimatedRoutes() {
         {/* ── Public ── */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/medical-landing" element={<MedicalLanding />} />
         <Route path="/products" element={<Products />} />
         <Route path="/privacy" element={<Privacy />} />
