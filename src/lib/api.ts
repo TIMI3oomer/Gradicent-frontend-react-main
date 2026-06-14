@@ -5,7 +5,7 @@ type RequestInitWithTimeout = RequestInit & { timeoutMs?: number };
 type QueryInput = string | URLSearchParams | Record<string, string | number | boolean | null | undefined> | null | undefined;
 type ApiResponse = JsonRecord & { data?: unknown; message?: string };
 
-const baseURL = "https://gradicent-api.vercel.app";
+const baseURL = "https://api.bindersoftware.com";
 
 function asMessage(value: unknown, fallback: string) {
   if (typeof value === 'string' && value.trim()) return value;
