@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('gradicent_access_token', json.token);
     }
 
-    setUser(json.data.user || json.data);
+    setUser(json.data);
   }, []);
 
   const logout = useCallback(async (domain: string = 'business') => {
