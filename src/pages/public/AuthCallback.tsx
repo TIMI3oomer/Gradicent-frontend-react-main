@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, type NavigateFunction } from 'react-router-dom';
 
 export function AuthCallback() {
-  const navigate = useNavigate();
+  const navigate: NavigateFunction = useNavigate();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -11,39 +11,10 @@ export function AuthCallback() {
       const domain = searchParams.get('domain') || 'medical';
 
       if (token) {
-        localStorage.setItem('gradicent_access_token', token);
-      }
-
-      try {
-        const response = await fetch('https://api.bindersoftware.com/api/auth/me', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          },
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          console.error('Failed to verify session status code:', response.status);
-          navigate('/login');
-          return;
-        }
-
-        const json = await response.json();
-        const user = json.data;
-
-        localStorage.setItem(
-          'gradicent_user',
-          JSON.stringify({
-            ...user,
-            _storedAt: Date.now(),
-          })
-        );
 
         navigate(`/${domain}/home`);
-      } catch (err) {
-        console.error('Error processing authentication token sync:', err);
+      } else {
+        console.error('Error processing authentication token');
         navigate('/login');
       }
     };
