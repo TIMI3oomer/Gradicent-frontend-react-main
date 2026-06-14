@@ -25,24 +25,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setLoading] = useState(true);
 
+  // Session Bootstrap: Instantly runs on app load using HTTP cookies
   useEffect(() => {
     const checkCurrentUser = async () => {
-      const token = localStorage.getItem('gradicent_access_token');
-      
-      // If there's no token and no local session, we can stop loading early
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
       try {
         const res = await fetch(`${API_BASE_URL}/me`, { 
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Crucial header link
           },
-          credentials: 'include' 
+          credentials: 'include' // Tells the browser to send cross-subdomain cookies automatically
         });
 
         if (res.ok) {
@@ -50,14 +42,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (json.status === 'success' && json.data) {
             setUser(json.data); 
           } else {
-            // Token is invalid/expired
-            localStorage.removeItem('gradicent_access_token');
+            setUser(null);
           }
         } else {
-          localStorage.removeItem('gradicent_access_token');
+          setUser(null);
         }
       } catch (err) {
         console.error('Failed to restore auth session:', err);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -66,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkCurrentUser();
   }, []);
 
+  // Standard password authentication route
   const login = useCallback(async (email: string, password: string, domain: string) => {
     const res = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
@@ -79,34 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(json.message || 'Authentication failed');
     }
 
-    // Save token if returned inside the login response structure
-    if (json.data?.token || json.data?.access_token) {
-      localStorage.setItem('gradicent_access_token', json.data.token || json.data.access_token);
-    } else if (json.token) {
-      localStorage.setItem('gradicent_access_token', json.token);
-    }
-
     setUser(json.data);
   }, []);
 
+  // Context sign-out routine
   const logout = useCallback(async (domain: string = 'business') => {
-    const token = localStorage.getItem('gradicent_access_token');
     try {
       await fetch(`${API_BASE_URL}/signout`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain }),
         credentials: 'include'
       });
     } catch (err) {
       console.error('Logout request failed:', err);
     } finally {
-      // Complete cleanup
-      localStorage.removeItem('gradicent_access_token');
-      localStorage.removeItem('gradicent_user');
       setUser(null);
       window.location.href = '/login';
     }
