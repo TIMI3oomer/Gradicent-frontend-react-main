@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const currentFrontendUrl = window.location.origin;
     const frontendCallbackRoute = `${currentFrontendUrl}/auth/callback`;
 
-    window.location.href = `${API_BASE_URL}/start?provider=google&domain=${encodeURIComponent(domain)}&frontend_callback=${encodeURIComponent(frontendCallbackRoute)}`;
+    window.location.href = `${API_BASE_URL}/start?provider=google&domain=${encodeURIComponent(domain)}&redirect_uri=${encodeURIComponent(frontendCallbackRoute)}`;
   }, []);
 
   return (
