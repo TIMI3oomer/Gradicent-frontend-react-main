@@ -1,39 +1,91 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, Globe, MapPin, Building2, Calendar } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
 import { Badge } from '../../components/shared/Badge';
 import { PlanBadge } from '../../components/business/PlanBadge';
 import { Avatar } from '../../components/shared/Avatar';
 import { DataTable, type Column } from '../../components/shared/DataTable/DataTable';
-import { mockClients } from '../../data/clients';
-import { mockTransactions } from '../../data/transactions';
-import { mockAppointments } from '../../data/appointments';
 import { formatCurrency, formatDate } from '../../lib/formatters';
-import type { Transaction, Appointment } from '../../types';
+import type { Client, Transaction, Appointment } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../lib/api'; // <-- Using your API Client
 
 const TABS = ['Overview', 'Transactions', 'Appointments', 'Notes'];
 
 export function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const [tab, setTab] = useState('Overview');
+  
+  // Data State
+  const [client, setClient] = useState<Client | null>(null);
+  const [txns, setTxns] = useState<Transaction[]>([]);
+  const [apts, setApts] = useState<Appointment[]>([]);
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const client = mockClients.find(c => c.id === id);
+  useEffect(() => {
+    const loadProfileData = async () => {
+      if (!user?.id || !id) return;
 
-  if (!client) {
+      try {
+        setIsLoading(true);
+        // Builds ?domain=business&user_id=123 context query string automatically
+        const query = api.getContextQuery('business', user.id);
+
+        // Fetch client metadata and transaction ledger simultaneously 
+        const [clientRes, txnsRes] = await Promise.all([
+          api.fetchOne<any>('/api/binder/clients', id, query),
+          api.fetchList<any>(`/api/binder/clients/${id}/transactions`, query).catch(() => ({ data: [] }))
+        ]);
+
+        setClient(clientRes.data || clientRes);
+        setTxns(txnsRes.data || txnsRes);
+        
+        // Separated to prevent a missing appointments list from breaking the core load
+        try {
+           const aptsRes = await api.fetchList<any>(`/api/binder/clients/${id}/appointments`, query);
+           setApts(aptsRes.data || aptsRes);
+        } catch (aptErr) {
+           console.warn('Could not load specific appointments', aptErr);
+        }
+
+        setError(null);
+      } catch (err: any) {
+        console.error('[ClientDetail] Fetch Error:', err);
+        setError(err.message || 'Error occurred syncing client details.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfileData();
+  }, [id, user?.id]);
+
+  if (isLoading) {
     return (
-      <BusinessLayout title="Client Not Found">
-        <div style={{ textAlign: 'center', padding: 48 }}>
-          <div style={{ fontSize: 16, color: 'var(--text-muted)', marginBottom: 16 }}>Client not found.</div>
-          <button className="btn-primary btn-md" onClick={() => navigate('/business/clients')}>Back to Clients</button>
+      <BusinessLayout title="Loading Profile...">
+        <div style={{ textAlign: 'center', padding: '100px 0', color: 'var(--text-muted)' }}>
+          Retrieving live client records...
         </div>
       </BusinessLayout>
     );
   }
 
-  const txns = mockTransactions.filter(t => t.clientId === client.id);
-  const apts = mockAppointments.filter(a => a.attendeeId === client.id || a.type === 'Business');
+  if (error || !client) {
+    return (
+      <BusinessLayout title="Client Not Found">
+        <div style={{ textAlign: 'center', padding: 48 }}>
+          <div style={{ fontSize: 16, color: 'var(--text-muted)', marginBottom: 16 }}>{error || 'Client not found.'}</div>
+          <button className="btn-primary btn-md" onClick={() => navigate('/business/clients')}>Back to Clients</button>
+        </div>
+      </BusinessLayout>
+    );
+  }
 
   const txnCols: Column<Transaction>[] = [
     { key: 'invoiceNumber', header: 'Invoice', render: v => <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{String(v ?? '—')}</span> },
@@ -41,19 +93,19 @@ export function ClientDetail() {
     { key: 'description', header: 'Description', render: v => <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{String(v)}</span> },
     {
       key: 'amount', header: 'Amount', align: 'right', sortable: true, render: v => (
-        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#22c55e', fontSize: 13 }}>{formatCurrency(v as number)}</span>
+        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#22c55e', fontSize: 13 }}>{formatCurrency(Number(v))}</span>
       ),
     },
-    { key: 'status', header: 'Status', render: v => <Badge status={v as 'Paid' | 'Pending' | 'Failed' | 'Cancelled'} size="sm" /> },
-    { key: 'date', header: 'Date', render: v => <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{formatDate(v as string, 'short')}</span> },
+    { key: 'status', header: 'Status', render: v => <Badge status={v as any} size="sm" /> },
+    { key: 'date', header: 'Date', render: v => <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{formatDate(String(v), 'short')}</span> },
   ];
 
   const aptCols: Column<Appointment>[] = [
     { key: 'title', header: 'Title', render: v => <span style={{ fontSize: 13, fontWeight: 600 }}>{String(v)}</span> },
-    { key: 'date', header: 'Date', render: v => <span style={{ fontSize: 12 }}>{formatDate(v as string, 'short')}</span> },
+    { key: 'date', header: 'Date', render: v => <span style={{ fontSize: 12 }}>{formatDate(String(v), 'short')}</span> },
     { key: 'time', header: 'Time', render: v => <span style={{ fontSize: 12 }}>{String(v)}</span> },
     { key: 'hostName', header: 'Host', render: v => <span style={{ fontSize: 12 }}>{String(v)}</span> },
-    { key: 'status', header: 'Status', render: v => <Badge status={v as 'Scheduled' | 'Completed' | 'Cancelled'} size="sm" /> },
+    { key: 'status', header: 'Status', render: v => <Badge status={v as any} size="sm" /> },
   ];
 
   return (
@@ -77,9 +129,6 @@ export function ClientDetail() {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <PlanBadge plan={client.plan} />
                 <Badge status={client.status} />
-                {client.tags.map(tag => (
-                  <span key={tag} style={{ padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 11, color: 'var(--text-muted)' }}>{tag}</span>
-                ))}
               </div>
             </div>
           </div>
@@ -87,7 +136,7 @@ export function ClientDetail() {
             {[
               { label: 'Revenue YTD', value: formatCurrency(client.revenueYTD), color: '#22c55e' },
               { label: 'MRR', value: formatCurrency(client.mrr), color: 'var(--primary)' },
-              { label: 'Since', value: formatDate(client.joinDate, 'short'), color: 'var(--text)' },
+              { label: 'Since', value: formatDate(client.joinDate || new Date().toISOString(), 'short'), color: 'var(--text)' },
             ].map(stat => (
               <div key={stat.label} style={{ background: 'var(--surface)', borderRadius: 8, padding: '10px 8px', border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{stat.label}</div>
@@ -120,11 +169,10 @@ export function ClientDetail() {
             <div className="card-title" style={{ marginBottom: 16 }}>Contact Info</div>
             {[
               { icon: <Mail size={14} />, label: 'Email', value: client.email },
-              { icon: <Phone size={14} />, label: 'Phone', value: client.phone },
-              { icon: <Globe size={14} />, label: 'Website', value: client.website },
-              { icon: <MapPin size={14} />, label: 'Address', value: client.address },
+              { icon: <Phone size={14} />, label: 'Phone', value: client.phone || '—' },
+              { icon: <Globe size={14} />, label: 'Website', value: client.website || '—' },
+              { icon: <MapPin size={14} />, label: 'Address', value: client.address || '—' },
               { icon: <Building2 size={14} />, label: 'Industry', value: client.industry },
-              { icon: <Calendar size={14} />, label: 'Last Interaction', value: formatDate(client.lastInteraction, 'long') },
             ].map(({ icon, label, value }) => (
               <div key={label} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: '1px solid var(--border-light)' }}>
                 <div style={{ color: 'var(--text-muted)', flexShrink: 0, marginTop: 1 }}>{icon}</div>
@@ -137,7 +185,7 @@ export function ClientDetail() {
           </div>
           <div className="card">
             <div className="card-title" style={{ marginBottom: 16 }}>Notes</div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>{client.notes || 'No notes yet.'}</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>{client.notes || 'No active file notes.'}</p>
           </div>
         </div>
       )}
