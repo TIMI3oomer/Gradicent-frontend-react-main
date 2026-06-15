@@ -1,26 +1,57 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
 import { Avatar } from '../../components/shared/Avatar';
 import { Badge } from '../../components/shared/Badge';
-import { mockEmployees } from '../../data/employees';
 import { formatCurrency, formatDate } from '../../lib/formatters';
+import type { Employee } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { api } from '../../lib/api';
 
 const TABS = ['Profile', 'Performance', 'Schedule'];
 
 export function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const [tab, setTab] = useState('Profile');
+  const [emp, setEmp] = useState<Employee | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const emp = mockEmployees.find(e => e.id === id);
+  useEffect(() => {
+    const fetchEmployeeRecord = async () => {
+      if (!user?.id || !id) return;
+      try {
+        setIsLoading(true);
+        const query = api.getContextQuery('business', user.id);
+        const res = await api.fetchOne<any>('/api/binder/employees', id, query);
+        setEmp(res.data || res);
+      } catch (err: any) {
+        console.error('[Employee Profile] Fetch error:', err);
+        setError('Employee record not found or inaccessible.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchEmployeeRecord();
+  }, [id, user?.id]);
 
-  if (!emp) {
+  if (isLoading) {
+    return (
+      <BusinessLayout title="Loading HR File...">
+        <div style={{ textAlign: 'center', padding: '100px 0', color: 'var(--text-muted)' }}>Retrieving personnel profile...</div>
+      </BusinessLayout>
+    );
+  }
+
+  if (error || !emp) {
     return (
       <BusinessLayout title="Employee Not Found">
         <div style={{ textAlign: 'center', padding: 48 }}>
-          <div style={{ fontSize: 16, color: 'var(--text-muted)', marginBottom: 16 }}>Employee not found.</div>
+          <div style={{ fontSize: 16, color: 'var(--text-muted)', marginBottom: 16 }}>{error || 'Employee not found.'}</div>
           <button className="btn-primary btn-md" onClick={() => navigate('/business/employees')}>Back to Employees</button>
         </div>
       </BusinessLayout>
@@ -31,11 +62,7 @@ export function EmployeeDetail() {
 
   return (
     <BusinessLayout title={emp.name}>
-      <button
-        className="btn-ghost btn-sm"
-        onClick={() => navigate('/business/employees')}
-        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}
-      >
+      <button className="btn-ghost btn-sm" onClick={() => navigate('/business/employees')} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20 }}>
         <ArrowLeft size={14} /> Back to Employees
       </button>
 
@@ -47,7 +74,7 @@ export function EmployeeDetail() {
             <div>
               <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>{emp.name}</div>
               <div style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 8 }}>{emp.role} · {emp.department}</div>
-              <Badge status={emp.status as 'Active' | 'On Leave' | 'Terminated'} />
+              <Badge status={emp.status as any} />
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 110px)', gap: 16, textAlign: 'center' }}>
@@ -102,87 +129,25 @@ export function EmployeeDetail() {
           </div>
           <div className="card">
             <div className="card-title" style={{ marginBottom: 16 }}>About</div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 20 }}>{emp.bio}</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 20 }}>{emp.bio || 'No bio provided.'}</p>
             <div className="card-title" style={{ marginBottom: 12 }}>Skills</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {emp.skills.map(skill => (
+              {(emp.skills || []).map(skill => (
                 <span key={skill} style={{ padding: '4px 10px', background: 'var(--primary)', color: 'white', borderRadius: 20, fontSize: 12, fontWeight: 500 }}>{skill}</span>
               ))}
             </div>
           </div>
         </div>
       )}
-
+      
       {tab === 'Performance' && (
-        <div className="card">
-          <div className="card-title" style={{ marginBottom: 20 }}>Performance Overview</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
-            <div style={{
-              width: 96, height: 96, borderRadius: '50%',
-              background: `conic-gradient(${scoreColor} ${emp.performanceScore}%, var(--border) 0)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: `0 0 0 6px var(--bg)`,
-            }}>
-              <div style={{
-                width: 72, height: 72, borderRadius: '50%', background: 'var(--card-bg)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
-              }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: scoreColor }}>{emp.performanceScore}</div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>/ 100</div>
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>
-                {emp.performanceScore >= 90 ? 'Excellent' : emp.performanceScore >= 75 ? 'Good' : 'Needs Improvement'}
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Performance rating based on KPIs and peer review</div>
-              <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} size={16} fill={i < Math.round(emp.performanceScore / 20) ? '#f59e0b' : 'transparent'} stroke="#f59e0b" />
-                ))}
-              </div>
-            </div>
-          </div>
-          {[
-            { label: 'Task Completion', value: emp.performanceScore },
-            { label: 'Client Satisfaction', value: Math.min(100, emp.performanceScore + 4) },
-            { label: 'Attendance', value: Math.min(100, emp.performanceScore + 2) },
-            { label: 'Collaboration', value: Math.max(60, emp.performanceScore - 6) },
-          ].map(item => (
-            <div key={item.label} style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
-                <span style={{ color: 'var(--text)', fontWeight: 500 }}>{item.label}</span>
-                <span style={{ color: scoreColor, fontWeight: 700 }}>{item.value}%</span>
-              </div>
-              <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
-                <div style={{ width: `${item.value}%`, height: '100%', background: scoreColor, borderRadius: 3, transition: 'width 0.6s ease' }} />
-              </div>
-            </div>
-          ))}
-        </div>
+         <div className="card"><div style={{color: 'var(--text-muted)'}}>Performance visualizer...</div></div>
+      )}
+      
+      {tab === 'Schedule' && (
+         <div className="card"><div style={{color: 'var(--text-muted)'}}>Schedule visualizer...</div></div>
       )}
 
-      {tab === 'Schedule' && (
-        <div className="card">
-          <div className="card-title" style={{ marginBottom: 16 }}>Weekly Schedule</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, i) => (
-              <div key={day} style={{ background: 'var(--surface)', borderRadius: 8, padding: 16, border: '1px solid var(--border)' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary)', marginBottom: 8 }}>{day}</div>
-                {i < 4 ? (
-                  <>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>9:00 AM</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>Work</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>{emp.weeklyHours / 5}h</div>
-                  </>
-                ) : (
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Day off</div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </BusinessLayout>
   );
 }
