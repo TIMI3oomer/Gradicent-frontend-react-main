@@ -22,45 +22,60 @@ export function BusinessProducts() {
       if (!user?.id) return;
       try {
         setIsLoading(true);
-        const res = await api.searchEntities<any>('/api/binder/products/search', {
-          domain: 'business', user_id: user.id, query: ''
-        });
-        const results = res.data?.results || res.data || [];
+        
+        let res;
+        const cleanQuery = search.trim();
+
+        if (!cleanQuery) {
+          // Standard GET listing path
+          res = await api.fetchList<any>('/api/binder/products', {
+            domain: 'business',
+            user_id: user.id
+          });
+        } else {
+          // Switch to search route if text is typed
+          res = await api.searchEntities<any>('/api/binder/products/search', {
+            domain: 'business',
+            user_id: user.id,
+            query: cleanQuery
+          });
+        }
+
+        const results = res.data?.products || res.data?.results || res.data || [];
         setProducts(Array.isArray(results) ? results : []);
       } catch (err) {
-        console.error('[Products] Fetch error:', err);
+        console.error('[Products Ledger] Sync Failure:', err);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchCatalog();
-  }, [user?.id]);
 
-  const categories = useMemo(() => ['All', ...Array.from(new Set(products.map(p => p.category)))], [products]);
+    const delayDebounce = setTimeout(() => {
+      fetchCatalog();
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [user?.id, search]);
+
+  const categories = useMemo(() => {
+    const set = new Set(products.map(p => p.category).filter(Boolean));
+    return ['All', ...Array.from(set)];
+  }, [products]);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
     return products.filter(p => {
-      const matchSearch = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q);
-      const matchStatus = statusFilter === 'All' || p.status === statusFilter;
-      const matchCat = categoryFilter === 'All' || p.category === categoryFilter;
-      return matchSearch && matchStatus && matchCat;
+      if (statusFilter !== 'All' && p.status !== statusFilter) return false;
+      if (categoryFilter !== 'All' && p.category !== categoryFilter) return false;
+      return true;
     });
-  }, [products, search, statusFilter, categoryFilter]);
+  }, [products, statusFilter, categoryFilter]);
 
   const columns: Column<Product>[] = [
-    {
-      key: 'name', header: 'Product', sortable: true, render: (v, row) => (
-        <div>
-          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)' }}>{String(v)}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.description}</div>
-        </div>
-      ),
-    },
+    { key: 'name', header: 'Product Name', sortable: true, render: (v, row) => <div style={{ fontWeight: 600, color: 'var(--text)' }}>{String(v)}</div> },
     { key: 'sku', header: 'SKU', render: v => <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{String(v)}</span> },
     { key: 'category', header: 'Category', render: v => <span style={{ fontSize: 12, padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4 }}>{String(v)}</span> },
     {
-      key: 'price', header: 'Price', align: 'right', sortable: true, render: (v, row) => (
+      key: 'price', header: 'Price', align: 'right', sortable: true, render: (v) => (
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--primary)', fontSize: 14 }}>{formatCurrency(Number(v))}</div>
         </div>
@@ -71,13 +86,38 @@ export function BusinessProducts() {
 
   return (
     <BusinessLayout title="Products">
-      {/* Search and Filters UI remains identical... */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 280 }}>
+          <div style={{ position: 'relative', flex: 1, maxWidth: 320 }}>
+            <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Filter catalog array..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14 }}
+            />
+          </div>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as any)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}>
+            <option value="All">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Discontinued">Discontinued</option>
+            <option value="Draft">Draft</option>
+          </select>
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)' }}>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <button style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}><Plus size={16} /> Add Product</button>
+      </div>
+
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Loading product catalog...</div>
       ) : filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 48 }}>
           <Package size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} />
-          <div style={{ color: 'var(--text-muted)' }}>No products found.</div>
+          <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>No Products Found</div>
+          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No items matched your search criteria.</div>
         </div>
       ) : (
         <div className="card" style={{ padding: 0 }}>
