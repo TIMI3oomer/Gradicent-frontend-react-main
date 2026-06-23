@@ -26,7 +26,6 @@ export interface Patient {
 }
 
 export interface Client {
-  avatar: string;
   id: string;
   name: string;
   company: string;

@@ -5,7 +5,6 @@ import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
 import { DataTable, type Column } from '../../components/shared/DataTable/DataTable';
 import { Badge } from '../../components/shared/Badge';
 import { PlanBadge } from '../../components/business/PlanBadge';
-import { Avatar } from '../../components/shared/Avatar';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Pagination } from '../../components/shared/Pagination';
 import { BUSINESS_ROUTES } from '../../lib/constants';
@@ -98,7 +97,6 @@ export function Clients() {
       sortable: true,
       render: (v, row) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => navigate(`${BUSINESS_ROUTES.CLIENTS}/${row.id}`)}>
-          <Avatar src={(row as any).avatar} name={String(v)} size="md" />
           <div>
             <div style={{ fontWeight: 600, color: 'var(--text)' }}>{String(v)}</div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.email}</div>
@@ -173,7 +171,6 @@ export function Clients() {
                 <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, cursor: 'pointer' }} onClick={() => navigate(`${BUSINESS_ROUTES.CLIENTS}/${c.id}`)}>
                   <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <Avatar src={c.avatar} name={c.name} size="lg" />
                       <div>
                         <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 15 }}>{c.name}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.email}</div>
