@@ -29,143 +29,149 @@ export function Employees() {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchStaffRegistry = async () => {
       if (!user?.id) return;
       try {
         setIsLoading(true);
-        const res = await api.searchEntities<any>('/api/binder/employee/search', {
-          domain: 'business',
-          user_id: user.id,
-          query: ''
-        });
-        const results = res.data?.results || res.data || [];
-        setEmployees(Array.isArray(results) ? results : []);
         setError(null);
+
+        let res;
+        const cleanQuery = search.trim();
+
+        if (!cleanQuery) {
+          // Standard GET listing parameter routing mapping
+          res = await api.fetchList<any>('/api/binder/employee', {
+            domain: 'business',
+            user_id: user.id
+          });
+        } else {
+          // Dedicated POST search execution
+          res = await api.searchEntities<any>('/api/binder/employees/search', {
+            domain: 'business',
+            user_id: user.id,
+            query: cleanQuery
+          });
+        }
+
+        const results = res.data?.employees || res.data?.results || res.data || [];
+        setEmployees(Array.isArray(results) ? results : []);
       } catch (err: any) {
-        console.error('[Employees] Fetch error:', err);
-        setError('Failed to load employee directory.');
+        console.error('[Employees Registry] Fetch Error:', err);
+        setError(err.message || 'Could not populate staff directory entries.');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchEmployees();
-  }, [user?.id]);
+
+    const delayDebounce = setTimeout(() => {
+      fetchStaffRegistry();
+    }, 300);
+
+    return () => clearTimeout(delayDebounce);
+  }, [user?.id, search]);
 
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return employees.filter(e => {
-      const matchSearch = !q || e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q) || e.email.toLowerCase().includes(q);
-      const matchDept = dept === 'All' || e.department === dept;
-      return matchSearch && matchDept;
+    return employees.filter(emp => {
+      if (dept !== 'All' && emp.department !== dept) return false;
+      return true;
     });
-  }, [employees, search, dept]);
+  }, [employees, dept]);
 
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginated = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filtered.slice(start, start + PAGE_SIZE);
+  }, [filtered, page]);
+
+  useEffect(() => { setPage(1); }, [dept, search]);
 
   const columns: Column<Employee>[] = [
     {
-      key: 'name', header: 'Employee', sortable: true, render: (v, row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Avatar src={row.avatar} name={String(v)} size="sm" />
+      key: 'name',
+      header: 'Staff Member',
+      sortable: true,
+      render: (v, row) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => navigate(`/business/employees/${row.id}`)}>
+          <Avatar src={row.avatar} name={String(v)} size="md" />
           <div>
-            <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)' }}>{String(v)}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.role}</div>
+            <div style={{ fontWeight: 600, color: 'var(--text)' }}>{String(v)}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.email}</div>
           </div>
         </div>
       ),
     },
-    { key: 'department', header: 'Department', render: v => <span style={{ fontSize: 12 }}>{String(v)}</span> },
-    { key: 'location', header: 'Location', render: v => <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{String(v)}</span> },
-    {
-      key: 'salary', header: 'Salary', align: 'right', sortable: true, render: v => (
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13 }}>{formatCurrency(Number(v))}</span>
-      ),
-    },
-    {
-      key: 'performanceScore', header: 'Perf.', align: 'right', sortable: true, render: v => {
-        const score = Number(v);
-        const color = score >= 90 ? '#22c55e' : score >= 75 ? '#f59e0b' : 'var(--danger)';
-        return <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color, fontSize: 13 }}>{score}</span>;
-      },
-    },
+    { key: 'role', header: 'Role / Designation', sortable: true },
+    { key: 'department', header: 'Department', sortable: true },
     { key: 'status', header: 'Status', render: v => <Badge status={v as any} size="sm" /> },
-    {
-      key: 'id', header: '', align: 'right', render: (_, row) => (
-        <button className="btn-ghost btn-sm" onClick={e => { e.stopPropagation(); navigate(`/business/employees/${row.id}`); }}>View</button>
-      ),
-    },
+    { key: 'utilization', header: 'Utilization', align: 'right', sortable: true, render: v => <span style={{ fontWeight: 600 }}>{v}%</span> }
   ];
 
   return (
-    <BusinessLayout title="Employees">
-      <div className="filter-row" style={{ marginBottom: 20 }}>
-        <div style={{ position: 'relative', flex: '0 0 260px' }}>
-          <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input
-            className="form-input"
-            style={{ paddingLeft: 32, height: 36 }}
-            placeholder="Search employees..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-          {DEPARTMENTS.map(d => (
-            <button key={d} className={dept === d ? 'btn-primary btn-sm' : 'btn-ghost btn-sm'} onClick={() => { setDept(d); setPage(1); }}>{d}</button>
-          ))}
-        </div>
-
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <div style={{ display: 'flex', gap: 2, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 6, padding: 2 }}>
-            <button className={view === 'table' ? 'btn-primary btn-sm' : 'btn-ghost btn-sm'} onClick={() => setView('table')} style={{ padding: '4px 8px' }}><List size={14} /></button>
-            <button className={view === 'cards' ? 'btn-primary btn-sm' : 'btn-ghost btn-sm'} onClick={() => setView('cards')} style={{ padding: '4px 8px' }}><LayoutGrid size={14} /></button>
+    <BusinessLayout title="Staff Directory">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 280 }}>
+          <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
+            <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder="Query staff members..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14 }}
+            />
           </div>
-          <button className="btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <UserPlus size={14} /> Add Employee
-          </button>
+          <select
+            value={dept}
+            onChange={e => setDept(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14 }}
+          >
+            {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
+            <button onClick={() => setView('table')} style={{ padding: 8, background: view === 'table' ? 'var(--surface)' : 'transparent', border: 0, color: view === 'table' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer' }}><List size={16} /></button>
+            <button onClick={() => setView('cards')} style={{ padding: 8, background: view === 'cards' ? 'var(--surface)' : 'transparent', border: 0, color: view === 'cards' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer' }}><LayoutGrid size={16} /></button>
+          </div>
+          <button style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}><UserPlus size={16} /> Onboard Staff</button>
         </div>
       </div>
 
+      {error && (
+        <div style={{ padding: 16, background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', borderRadius: 6, color: '#ef4444', marginBottom: 20 }}>
+          {error}
+        </div>
+      )}
+
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Retrieving personnel records...</div>
-      ) : error ? (
-        <div style={{ textAlign: 'center', padding: 48, color: 'var(--danger)' }}>{error}</div>
+        <div style={{ textAlign: 'center', padding: '64px 0', color: 'var(--text-muted)' }}>Synchronizing staff nodes...</div>
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={<LayoutGrid size={36} />} title="No Employees Found" description="No personnel directory items align with standard filter metrics." />
       ) : (
         <>
-          <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text-muted)' }}>
-            {filtered.length} employee{filtered.length !== 1 ? 's' : ''} found
-          </div>
-
           {view === 'table' ? (
-            <div className="card" style={{ padding: 0 }}>
-              <DataTable data={paginated} columns={columns} onRowClick={row => navigate(`/business/employees/${(row as Employee).id}`)} rowKey="id" emptyTitle="No employees match your filters." />
+            <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
+              <DataTable data={paginated} columns={columns} rowKey="id" />
             </div>
           ) : (
-            <>
-              {paginated.length === 0 ? (
-                <EmptyState icon={<UserPlus size={32} />} title="No employees found" description="Try adjusting your filters." />
-              ) : (
-                <div className="three-col">
-                  {paginated.map(emp => (
-                    <div
-                      key={emp.id}
-                      className="card"
-                      style={{ cursor: 'pointer', transition: 'transform 0.15s', textAlign: 'center' }}
-                      onClick={() => navigate(`/business/employees/${emp.id}`)}
-                    >
-                      <Avatar src={emp.avatar} name={emp.name} size="xl" />
-                      <div style={{ marginTop: 12, fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>{emp.name}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>{emp.role}</div>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
-                        <span style={{ padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 11 }}>{emp.department}</span>
-                        <Badge status={emp.status as any} size="sm" />
-                      </div>
-                    </div>
-                  ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+              {paginated.map(emp => (
+                <div
+                  key={emp.id}
+                  className="card"
+                  style={{ cursor: 'pointer', transition: 'transform 0.15s', textAlign: 'center' }}
+                  onClick={() => navigate(`/business/employees/${emp.id}`)}
+                >
+                  <Avatar src={emp.avatar} name={emp.name} size="xl" />
+                  <div style={{ marginTop: 12, fontWeight: 700, fontSize: 15, color: 'var(--text)' }}>{emp.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>{emp.role}</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 12 }}>
+                    <span style={{ padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 11 }}>{emp.department}</span>
+                    <Badge status={emp.status as any} size="sm" />
+                  </div>
                 </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
 
           {filtered.length > PAGE_SIZE && (
