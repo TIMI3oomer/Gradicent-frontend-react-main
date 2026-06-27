@@ -16,11 +16,12 @@ Binder is a production-ready web application that communicates with an existing 
 
 * Responsive and modern user interface
 * Built with React and TypeScript
-* REST API integration
-* Component-based architecture
-* Type-safe development
-* Improved maintainability through refactoring
-* Scalable project structure
+* REST API integration with reusable data utilities
+* Business and medical dashboard experiences
+* Authentication-aware routes and protected pages
+* Charting, tables, forms, modals, and notifications
+* Theme and layout support for multiple app areas
+* Component-based and scalable project structure
 
 ---
 
@@ -52,13 +53,29 @@ As the Frontend Developer, I was responsible for:
 
 ```text
 src/
-├── components/
-├── pages/
-├── hooks/
-├── services/
-├── utils/
 ├── assets/
-└── App.tsx
+├── components/
+│   ├── business/
+│   ├── medical/
+│   └── shared/
+├── context/
+├── data/
+├── hooks/
+├── layouts/
+│   ├── BusinessLayout/
+│   ├── MedicalLayout/
+│   └── PublicLayout/
+├── lib/
+├── pages/
+│   ├── business/
+│   ├── medical/
+│   ├── public/
+│   └── shared/
+├── styles/
+├── types/
+├── App.tsx
+├── main.tsx
+└── index.css
 ```
 
 ---
