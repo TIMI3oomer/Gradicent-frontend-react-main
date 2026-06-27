@@ -1,73 +1,90 @@
-# React + TypeScript + Vite
+# Binder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern frontend application built for **Gradient** as part of a real-world production product. The project was initially developed using **JavaScript** and was later refactored to **React** with **TypeScript** to improve maintainability, scalability, and developer experience.
 
-Currently, two official plugins are available:
+> **Note:** This repository contains only the frontend implementation. The backend was developed separately and is not included.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## About
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Binder is a production-ready web application that communicates with an existing backend through REST APIs. During development, the frontend was migrated from vanilla JavaScript to React with TypeScript, resulting in a cleaner architecture, improved type safety, and a more maintainable codebase.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+* Responsive and modern user interface
+* Built with React and TypeScript
+* REST API integration
+* Component-based architecture
+* Type-safe development
+* Improved maintainability through refactoring
+* Scalable project structure
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Tech Stack
+
+* React
+* TypeScript
+* JavaScript
+* HTML5
+* CSS3
+* REST APIs
+
+---
+
+## My Contributions
+
+As the Frontend Developer, I was responsible for:
+
+* Developing and maintaining frontend features
+* Refactoring the application from JavaScript to React
+* Migrating the codebase to TypeScript
+* Integrating frontend components with backend APIs
+* Improving code organization and maintainability
+* Fixing bugs and enhancing the user experience
+
+---
+
+## Project Structure
+
+```text
+src/
+├── components/
+├── pages/
+├── hooks/
+├── services/
+├── utils/
+├── assets/
+└── App.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Installation
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git clone https://github.com/yourusername/binder.git
+
+cd binder
+
+npm install
+
+npm run dev
 ```
+
+---
+
+## Build
+
+```bash
+npm run build
+```
+
+---
+
+## License
+
+This repository is shared for portfolio purposes only. All rights to the original product belong to **Gradient**.
