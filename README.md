@@ -104,4 +104,4 @@ npm run build
 
 ## License
 
-This repository is shared for portfolio purposes only. All rights to the original product belong to **Gradient**.
+This repository is shared for portfolio purposes only. All rights to the original product belong to **Gradicent**.
