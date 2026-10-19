@@ -24,6 +24,7 @@ body {
   font-family: var(--font-inter);
   line-height: var(--leading-normal);
   color: #1A2332;
+  background: #FFFFFF;
 }
 
 /* Skip navigation */

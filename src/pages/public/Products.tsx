@@ -46,15 +46,15 @@ const businessPlans = [
   },
 ];
 
-function PricingSection({ title, subtitle, plans, accent }: { title: string; subtitle: string; plans: typeof medicalPlans; accent: string }) {
+function PricingSection({ id, domain, title, subtitle, plans, accent }: { id: string; domain: 'medical' | 'business'; title: string; subtitle: string; plans: typeof medicalPlans; accent: string }) {
   const navigate = useNavigate();
   return (
-    <div style={{ marginBottom: 80 }}>
+    <section id={id} style={{ marginBottom: 80, scrollMarginTop: 88 }}>
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
-        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 800, color: 'var(--navy)', marginBottom: 12 }}>{title}</h2>
+        <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 'clamp(28px, 5vw, 36px)', fontWeight: 800, color: 'var(--navy)', marginBottom: 12 }}>{title}</h2>
         <p style={{ color: '#6b7280', fontSize: 16 }}>{subtitle}</p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24, maxWidth: 960, margin: '0 auto' }}>
         {plans.map(plan => (
           <div
             key={plan.name}
@@ -84,7 +84,7 @@ function PricingSection({ title, subtitle, plans, accent }: { title: string; sub
               ))}
             </div>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(`/login?domain=${domain}`)}
               style={{
                 width: '100%', padding: '13px', borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: 'pointer',
                 background: plan.popular ? accent : 'transparent',
@@ -98,26 +98,30 @@ function PricingSection({ title, subtitle, plans, accent }: { title: string; sub
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
 export function Products() {
   return (
     <PublicLayout>
-      <div style={{ paddingTop: 80, paddingBottom: 40, textAlign: 'center', background: 'var(--navy)', color: 'white' }}>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 52, fontWeight: 900, marginBottom: 16 }}>Simple, Transparent Pricing</h1>
+      <div style={{ padding: '80px 24px 48px', textAlign: 'center', background: 'var(--navy)', color: 'white' }}>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 'clamp(34px, 7vw, 52px)', fontWeight: 900, lineHeight: 1.1, marginBottom: 16 }}>Simple, Transparent Pricing</h1>
         <p style={{ fontSize: 18, opacity: 0.75, maxWidth: 560, margin: '0 auto' }}>Choose the plan that fits your team. Upgrade or downgrade anytime.</p>
       </div>
 
-      <div style={{ padding: '64px 24px' }}>
+      <div id="pricing" style={{ padding: '64px 24px', scrollMarginTop: 64 }}>
         <PricingSection
+          id="medical"
+          domain="medical"
           title="Medical Platform"
           subtitle="Built for healthcare teams of every size."
           plans={medicalPlans}
           accent="#CE7A35"
         />
         <PricingSection
+          id="business"
+          domain="business"
           title="Business Platform"
           subtitle="Power your operations and grow revenue."
           plans={businessPlans}
@@ -128,9 +132,12 @@ export function Products() {
       <div style={{ background: '#f9fafb', padding: '64px 24px', textAlign: 'center' }}>
         <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 800, color: 'var(--navy)', marginBottom: 12 }}>Need a custom solution?</h2>
         <p style={{ color: '#6b7280', marginBottom: 24, fontSize: 16 }}>Contact our sales team for enterprise pricing and custom arrangements.</p>
-        <button style={{ padding: '14px 32px', background: 'var(--navy)', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 16, cursor: 'pointer' }}>
+        <a
+          href="mailto:sales@gradicent.io?subject=Custom%20solution%20inquiry"
+          style={{ display: 'inline-block', padding: '14px 32px', background: 'var(--navy)', color: 'white', borderRadius: 8, fontWeight: 700, fontSize: 16 }}
+        >
           Contact Sales
-        </button>
+        </a>
       </div>
     </PublicLayout>
   );

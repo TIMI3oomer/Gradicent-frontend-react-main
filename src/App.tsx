@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
@@ -46,6 +47,32 @@ import { BusinessSettings } from './pages/business/BusinessSettings';
 import { BusinessAccount } from './pages/business/BusinessAccount';
 import { Plan } from './pages/business/Plan';
 import { BusinessNotifications } from './pages/business/BusinessNotifications';
+
+// ─── Reset scroll on navigation (or jump to #hash targets) ────────────────────
+
+function ScrollManager() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    // The target may not be mounted yet while the previous route animates out
+    let attempts = 0;
+    const timer = window.setInterval(() => {
+      const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+      if (target || ++attempts > 20) {
+        window.clearInterval(timer);
+        target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+    return () => window.clearInterval(timer);
+  }, [pathname, hash]);
+
+  return null;
+}
 
 // ─── AnimatePresence needs a keyed child to detect route changes ──────────────
 
@@ -117,6 +144,7 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <ThemeProvider>
+            <ScrollManager />
             <AnimatedRoutes />
           </ThemeProvider>
         </AuthProvider>

@@ -28,13 +28,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Session Bootstrap: Instantly runs on app load using HTTP cookies
   useEffect(() => {
     const checkCurrentUser = async () => {
+      // Don't leave protected pages blank forever if the API hangs
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 10000);
       try {
-        const res = await fetch(`${API_BASE_URL}/me`, { 
+        const res = await fetch(`${API_BASE_URL}/me`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include' // Tells the browser to send cross-subdomain cookies automatically
+          credentials: 'include', // Tells the browser to send cross-subdomain cookies automatically
+          signal: controller.signal,
         });
 
         if (res.ok) {
@@ -51,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Failed to restore auth session:', err);
         setUser(null);
       } finally {
+        window.clearTimeout(timeoutId);
         setLoading(false);
       }
     };
@@ -110,7 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout 
       }}
     >
-      {!isLoading && children}
+      {/* Public pages render immediately; ProtectedRoute waits for isLoading itself */}
+      {children}
     </AuthContext.Provider>
   );
 }

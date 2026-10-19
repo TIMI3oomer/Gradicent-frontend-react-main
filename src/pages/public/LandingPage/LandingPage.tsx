@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowDown, ChevronRight, CircleCheck as CheckCircle2 } from 'lucide-react';
@@ -55,14 +54,12 @@ const testimonials = [
 ];
 
 export function LandingPage() {
-  const heroRef = useRef<HTMLDivElement>(null);
-
   return (
     <PublicLayout>
       {/* ===== HERO ===== */}
-      <section ref={heroRef} style={{ position: 'relative', minHeight: '100vh', display: 'flex', overflow: 'hidden', background: 'white' }}>
+      <section className="landing-hero" style={{ position: 'relative', minHeight: 'calc(100vh - 64px)', display: 'flex', overflow: 'hidden', background: 'white' }}>
         {/* Left navy panel */}
-        <div style={{
+        <div className="landing-hero-bg" style={{
           position: 'absolute', inset: 0,
           background: '#1B427A',
           clipPath: 'polygon(0 0, 62% 0, 50% 100%, 0 100%)',
@@ -76,7 +73,7 @@ export function LandingPage() {
         </div>
 
         {/* Left content */}
-        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '80px 80px 80px 64px', maxWidth: '680px' }}>
+        <div className="landing-hero-copy" style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '80px 80px 80px 64px', maxWidth: '680px' }}>
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -90,7 +87,7 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 'clamp(48px, 5vw, 72px)', fontWeight: 700, color: 'white', lineHeight: 1.1, marginBottom: 24 }}
+            style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 'clamp(40px, 5vw, 72px)', fontWeight: 700, color: 'white', lineHeight: 1.1, marginBottom: 24 }}
           >
             Manage Everything.<br />
             <span style={{ color: '#FFAF0F' }}>Decide Smarter.</span>
@@ -112,13 +109,13 @@ export function LandingPage() {
             style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 40 }}
           >
             <Link
-              to="/login"
+              to="/login?domain=medical"
               style={{ padding: '12px 24px', background: '#FFAF0F', color: '#1B427A', borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'background 0.15s' }}
             >
               For Medical Teams <ChevronRight size={16} />
             </Link>
             <Link
-              to="/login"
+              to="/login?domain=business"
               style={{ padding: '12px 24px', background: 'transparent', color: 'white', border: '1.5px solid rgba(255,255,255,0.5)', borderRadius: 8, fontWeight: 600, fontSize: 15, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
               For Business Teams
@@ -141,7 +138,7 @@ export function LandingPage() {
         </div>
 
         {/* Right dashboard mockup */}
-        <div style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 48px' }}>
+        <div className="landing-hero-visual" style={{ position: 'relative', zIndex: 1, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '80px 48px' }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -199,6 +196,8 @@ export function LandingPage() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: [0, 8, 0] }}
           transition={{ delay: 1.2, duration: 1.5, repeat: Infinity }}
+          className="landing-scroll-hint"
+          onClick={() => document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' })}
           style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
           aria-hidden="true"
         >
@@ -207,8 +206,8 @@ export function LandingPage() {
       </section>
 
       {/* ===== STATS BAR ===== */}
-      <section style={{ background: '#112C5A', padding: '32px 64px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
+      <section id="stats" className="landing-section landing-stats" style={{ background: '#112C5A', padding: '32px 64px' }}>
+        <div className="landing-grid-4" style={{ display: 'grid', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
           {[
             { target: 847, suffix: '+', label: 'Patients Managed', prefix: '' },
             { target: 63, suffix: '', label: 'Active Business Clients', prefix: '' },
@@ -226,7 +225,7 @@ export function LandingPage() {
       </section>
 
       {/* ===== HOW IT WORKS ===== */}
-      <section style={{ padding: '100px 48px', background: 'white' }}>
+      <section className="landing-section" style={{ padding: '100px 48px', background: 'white' }}>
         <FadeInSection>
           <div style={{ textAlign: 'center', marginBottom: 56 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#1171BB', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>Two Products</div>
@@ -234,7 +233,7 @@ export function LandingPage() {
             <p style={{ fontSize: 17, color: '#4A6080', maxWidth: 500, margin: '0 auto', lineHeight: 1.65 }}>Built for the teams that have to think about both people and numbers every day.</p>
           </div>
         </FadeInSection>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, maxWidth: 900, margin: '0 auto' }}>
+        <div className="landing-grid-2" style={{ display: 'grid', gap: 24, maxWidth: 900, margin: '0 auto' }}>
           <FadeInSection delay={0.1}>
             <div style={{ background: '#EAD9C8', borderRadius: 16, padding: 32, border: '1px solid #C4AD97' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>🩺</div>
@@ -262,7 +261,7 @@ export function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link to="/products" style={{ fontSize: 14, fontWeight: 600, color: '#3B9AE1', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Link to="/products#business" style={{ fontSize: 14, fontWeight: 600, color: '#3B9AE1', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                 Learn more <ChevronRight size={14} />
               </Link>
             </div>
@@ -271,14 +270,14 @@ export function LandingPage() {
       </section>
 
       {/* ===== FEATURES GRID ===== */}
-      <section style={{ padding: '80px 64px', background: '#F8F9FC' }}>
+      <section className="landing-section" style={{ padding: '80px 64px', background: '#F8F9FC' }}>
         <FadeInSection>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#FFAF0F', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 12 }}>Features</div>
             <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 'clamp(28px, 3.5vw, 42px)', fontWeight: 700, color: '#0D1F3C' }}>Everything you need.</h2>
           </div>
         </FadeInSection>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, maxWidth: 1100, margin: '0 auto' }}>
+        <div className="landing-grid-3" style={{ display: 'grid', gap: 20, maxWidth: 1100, margin: '0 auto' }}>
           {features.map((f, i) => (
             <FadeInSection key={f.title} delay={i * 0.08}>
               <div style={{ background: 'white', borderRadius: 12, padding: 24, border: '1px solid #D4DCE8', transition: 'box-shadow 0.15s, transform 0.15s' }}
@@ -295,21 +294,20 @@ export function LandingPage() {
       </section>
 
       {/* ===== TESTIMONIALS ===== */}
-      <section style={{ padding: '80px 64px', background: '#1B427A' }}>
+      <section className="landing-section" style={{ padding: '80px 64px', background: '#1B427A' }}>
         <FadeInSection>
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: 700, color: 'white' }}>Trusted by teams who care</h2>
           </div>
         </FadeInSection>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, maxWidth: 1100, margin: '0 auto', alignItems: 'start' }}>
+        <div className="landing-grid-3" style={{ display: 'grid', gap: 20, maxWidth: 1100, margin: '0 auto', alignItems: 'start' }}>
           {testimonials.map((t, i) => (
             <FadeInSection key={t.name} delay={i * 0.12}>
-              <div style={{
+              <div className={i === 1 ? 'landing-testimonial-offset' : undefined} style={{
                 background: 'rgba(255,255,255,0.06)',
                 borderRadius: 12,
                 padding: 28,
                 border: '1px solid rgba(255,255,255,0.1)',
-                marginTop: i === 1 ? -20 : 0,
               }}>
                 <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, marginBottom: 20, fontStyle: 'italic' }}>"{t.quote}"</p>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>{t.name}</div>
@@ -321,7 +319,7 @@ export function LandingPage() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section style={{ padding: '100px 48px', background: 'white', textAlign: 'center', position: 'relative' }}>
+      <section className="landing-section" style={{ padding: '100px 48px', background: 'white', textAlign: 'center', position: 'relative' }}>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 1px 1px, #D4DCE8 1px, transparent 0)', backgroundSize: '32px 32px', opacity: 0.4, pointerEvents: 'none' }} />
         <FadeInSection>
           <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 'clamp(28px, 3.5vw, 48px)', fontWeight: 700, color: '#0D1F3C', marginBottom: 16, position: 'relative' }}>
@@ -329,10 +327,10 @@ export function LandingPage() {
           </h2>
           <p style={{ fontSize: 18, color: '#4A6080', marginBottom: 36, position: 'relative' }}>Start your free 30-day trial. No credit card required.</p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', position: 'relative' }}>
-            <Link to="/login" style={{ padding: '13px 28px', background: '#CE7A35', color: 'white', borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Link to="/login?domain=medical" style={{ padding: '13px 28px', background: '#CE7A35', color: 'white', borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               Start Medical Trial
             </Link>
-            <Link to="/login" style={{ padding: '13px 28px', background: '#1171BB', color: 'white', borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Link to="/login?domain=business" style={{ padding: '13px 28px', background: '#1171BB', color: 'white', borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               Start Business Trial
             </Link>
           </div>
@@ -341,10 +339,3 @@ export function LandingPage() {
     </PublicLayout>
   );
 }
-
-// Stat counter display value helper
-function StatCounterValue({ value, prefix, suffix }: { value: number; prefix: string; suffix: string }) {
-  return <span>{prefix}{value.toLocaleString()}{suffix}</span>;
-}
-// Quiet the TS warning
-void StatCounterValue;
