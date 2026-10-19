@@ -32,12 +32,15 @@ export function StatCard({
   index = 0,
   decimals = 0,
 }: StatCardProps) {
-  const countedValue = useCountUp(value, 1200, index * 80);
+  // useCountUp counts in whole numbers, so count in units of 10^-decimals and scale back
+  const scale = Math.pow(10, decimals);
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const countedValue = useCountUp(Math.round(safeValue * scale), 1200, index * 80);
 
   if (isLoading) return <StatCardSkeleton />;
 
   const displayValue = decimals > 0
-    ? (countedValue / Math.pow(10, decimals)).toFixed(decimals)
+    ? (countedValue / scale).toFixed(decimals)
     : countedValue.toLocaleString('en-US');
 
   return (

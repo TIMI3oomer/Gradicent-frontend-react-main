@@ -1,3 +1,4 @@
+import { type KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Users, Calendar, Clock, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -31,10 +32,26 @@ const todayAppts = mockAppointments
 
 const colors = ['#CE7A35', '#78CEE6', '#4CAF7D', '#E8A838', '#D95C5C', '#6B6560', '#9B8E87', '#C8AF99'];
 
+const HONORIFICS = /^(dr|mr|mrs|ms|miss|mx|prof|sir|madam)\.?$/i;
+
+/** "Dr. Alex Morgan" → "Alex"; falls back to "Doctor" when no usable name exists. */
+function greetingName(name: string | null | undefined) {
+  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
+  return parts.find(part => !HONORIFICS.test(part)) ?? 'Doctor';
+}
+
 export function MedicalHome() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const greeting = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
+
+  const onScheduleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      navigate('/medical/appointments');
+    }
+  };
 
   const columns: Column<typeof recentVisits[0]>[] = [
     {
@@ -56,7 +73,7 @@ export function MedicalHome() {
   ];
 
   return (
-    <MedicalLayout title={`Good ${greeting}, ${user?.name?.split(' ')[0] ?? 'Doctor'}`} actionLabel="Add Patient" actionPath={MEDICAL_ROUTES.ADD_PATIENT}>
+    <MedicalLayout title={`Good ${greeting}, ${greetingName(user?.name)}`}actionLabel="Add Patient" actionPath={MEDICAL_ROUTES.ADD_PATIENT}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -68,7 +85,7 @@ export function MedicalHome() {
         <MedicalStatCard title="Total Patients" value={medicalStats.totalPatients} trend="up" trendValue={`+${medicalStats.newPatientsThisMonth} this month`} icon={<Users size={18} />} index={0} />
         <MedicalStatCard title="Visits Today" value={medicalStats.visitsToday} trend="neutral" trendValue={`of ${medicalStats.visitsScheduledToday} scheduled`} icon={<Activity size={18} />} index={1} />
         <MedicalStatCard title="Appointments" value={medicalStats.appointmentsToday} trend="up" trendValue="Next in 34 min" icon={<Calendar size={18} />} index={2} />
-        <MedicalStatCard title="Avg Wait Time" value={medicalStats.avgWaitTime} unit=" min" trend="down" trendValue="↓3 min vs last week" icon={<Clock size={18} />} index={3} />
+        <MedicalStatCard title="Avg Wait Time" value={medicalStats.avgWaitTime} unit=" min" trend="down" lowerIsBetter trendValue="3 min less than last week" icon={<Clock size={18} />} index={3} />
       </div>
 
       {/* Row 2 */}
@@ -101,6 +118,11 @@ export function MedicalHome() {
                 initial={{ opacity: 0, x: -4 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04 }}
+                className="medical-clickable-row"
+                role="button"
+                tabIndex={0}
+                aria-label={`${appt.time} ${appt.attendeeName}, ${appt.appointmentType}, ${appt.status}. Open appointments`}
+                onKeyDown={onScheduleKeyDown}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '10px 12px',

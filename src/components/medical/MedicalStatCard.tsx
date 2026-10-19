@@ -13,10 +13,19 @@ interface MedicalStatCardProps {
   icon?: ReactNode;
   index?: number;
   decimals?: number;
+  /**
+   * Set when a decrease is the good outcome (e.g. wait time, visit duration):
+   * the arrow still follows `trend`, but the colour shows it as positive.
+   */
+  lowerIsBetter?: boolean;
 }
 
-export function MedicalStatCard({ title, value, unit, trend, trendValue, icon, index = 0, decimals = 0 }: MedicalStatCardProps) {
+export function MedicalStatCard({ title, value, unit, trend, trendValue, icon, index = 0, decimals = 0, lowerIsBetter = false }: MedicalStatCardProps) {
   const displayed = useCountUp(value, 1200, index * 80);
+  // trend-up = green, trend-down = red in components.css; flip the colour when lower is better
+  const tone = trend === 'neutral' || !trend
+    ? 'neutral'
+    : (trend === 'up') !== lowerIsBetter ? 'up' : 'down';
 
   return (
     <motion.div
@@ -33,7 +42,7 @@ export function MedicalStatCard({ title, value, unit, trend, trendValue, icon, i
         {unit && <span className="stat-card-unit">{unit}</span>}
       </div>
       {trend && trendValue && (
-        <div className={cn('stat-card-trend', `trend-${trend}`)}>
+        <div className={cn('stat-card-trend', `trend-${tone}`)}>
           {trend === 'up' ? <TrendingUp size={12} /> : trend === 'down' ? <TrendingDown size={12} /> : null}
           <span>{trendValue}</span>
         </div>

@@ -3,22 +3,24 @@ import { cn } from '../../lib/cn';
 
 interface AvatarProps {
   src?: string | null;
-  name: string;
+  name?: string | null;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
 }
 
 const sizes = {
-  xs: { container: 'avatar-xs', text: 'text-xs' },
-  sm: { container: 'avatar-sm', text: 'text-xs' },
-  md: { container: 'avatar-md', text: 'text-sm' },
-  lg: { container: 'avatar-lg', text: 'text-lg' },
-  xl: { container: 'avatar-xl', text: 'text-xl' },
+  xs: { container: 'avatar-xs', fontSize: 9 },
+  sm: { container: 'avatar-sm', fontSize: 11 },
+  md: { container: 'avatar-md', fontSize: 13 },
+  lg: { container: 'avatar-lg', fontSize: 17 },
+  xl: { container: 'avatar-xl', fontSize: 26 },
 };
 
-export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
+export function Avatar({ src, name: rawName, size = 'md', className }: AvatarProps) {
+  // API records can be missing a name; don't crash the whole page over it
+  const name = rawName?.trim() || '';
   const sizeClasses = sizes[size];
-  const initials = getInitials(name);
+  const initials = getInitials(name) || '?';
   const bgColor = generateAvatarColor(name);
 
   if (src) {
@@ -33,10 +35,10 @@ export function Avatar({ src, name, size = 'md', className }: AvatarProps) {
 
   return (
     <span
-      className={cn('avatar avatar-initials', sizeClasses.container, sizeClasses.text, className)}
-      style={{ backgroundColor: bgColor }}
-      aria-label={name}
-      title={name}
+      className={cn('avatar avatar-initials', sizeClasses.container, className)}
+      style={{ backgroundColor: bgColor, fontSize: sizeClasses.fontSize }}
+      aria-label={name || undefined}
+      title={name || undefined}
     >
       {initials}
     </span>

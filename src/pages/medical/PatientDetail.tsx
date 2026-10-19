@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CreditCard as Edit2, Calendar, FileText, Printer } from 'lucide-react';
@@ -7,7 +7,7 @@ import { Avatar } from '../../components/shared/Avatar';
 import { Badge } from '../../components/shared/Badge';
 import { mockPatients } from '../../data/patients';
 import { mockAppointments } from '../../data/appointments';
-import { formatDate } from '../../lib/formatters';
+import { formatDate, formatRelativeTime } from '../../lib/formatters';
 
 const TABS = ['Overview', 'Visit History', 'Vitals', 'Notes & Documents', 'Insurance'] as const;
 
@@ -15,6 +15,29 @@ export function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<typeof TABS[number]>('Overview');
+  const [noteDraft, setNoteDraft] = useState('');
+  // No notes API exists yet, so notes are kept for this session only and labelled as such
+  const [allLocalNotes, setLocalNotes] = useState<{ id: number; patientId: string | undefined; text: string; createdAt: string }[]>([]);
+  const localNotes = allLocalNotes.filter(note => note.patientId === id);
+
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let next = index;
+    if (event.key === 'ArrowRight') next = (index + 1) % TABS.length;
+    else if (event.key === 'ArrowLeft') next = (index - 1 + TABS.length) % TABS.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = TABS.length - 1;
+    else return;
+    event.preventDefault();
+    setActiveTab(TABS[next]);
+    document.getElementById(`patient-tab-${next}`)?.focus();
+  };
+
+  const handleSaveNote = () => {
+    const text = noteDraft.trim();
+    if (!text) return;
+    setLocalNotes(notes => [{ id: Date.now(), patientId: id, text, createdAt: new Date().toISOString() }, ...notes]);
+    setNoteDraft('');
+  };
 
   const patient = mockPatients.find(p => p.id === id);
 
@@ -78,26 +101,41 @@ export function PatientDetail() {
             </div>
           </div>
           <div className="medical-hero-actions">
-            <button className="btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Edit2 size={13} /> Edit
+            <button
+              type="button"
+              className="btn-secondary btn-sm"
+              style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+              disabled
+              title="Coming soon"
+              aria-label="Edit patient (coming soon)"
+            >
+              <Edit2 size={13} aria-hidden="true" /> Edit
             </button>
-            <button className="btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+            <button type="button" className="btn-primary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 5 }}
               onClick={() => navigate('/medical/appointments')}>
-              <Calendar size={13} /> Schedule
+              <Calendar size={13} aria-hidden="true" /> Schedule
             </button>
-            <button className="btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <Printer size={13} /> Print
+            <button type="button" className="btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+              onClick={() => window.print()}>
+              <Printer size={13} aria-hidden="true" /> Print
             </button>
           </div>
         </div>
       </motion.div>
 
       {/* Tabs */}
-      <div className="medical-tabs">
-        {TABS.map(tab => (
+      <div className="medical-tabs" role="tablist" aria-label="Patient record sections">
+        {TABS.map((tab, i) => (
           <button
             key={tab}
+            type="button"
+            role="tab"
+            id={`patient-tab-${i}`}
+            aria-selected={activeTab === tab}
+            aria-controls="patient-tabpanel"
+            tabIndex={activeTab === tab ? 0 : -1}
             onClick={() => setActiveTab(tab)}
+            onKeyDown={e => onTabKeyDown(e, i)}
             style={{
               padding: '10px 16px',
               fontSize: 13,
@@ -117,6 +155,7 @@ export function PatientDetail() {
       </div>
 
       {/* Tab content */}
+      <div role="tabpanel" id="patient-tabpanel" aria-labelledby={`patient-tab-${TABS.indexOf(activeTab)}`}>
       {activeTab === 'Overview' && (
         <div className="two-col">
           <div className="card">
@@ -220,12 +259,42 @@ export function PatientDetail() {
       {activeTab === 'Notes & Documents' && (
         <div className="card" style={{ maxWidth: 600 }}>
           <div className="card-title" style={{ marginBottom: 16 }}>Clinical Notes</div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-            <textarea className="form-input form-textarea" placeholder="Add a clinical note..." style={{ flex: 1 }} />
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <label htmlFor="clinical-note" className="sr-only">Clinical note</label>
+            <textarea
+              id="clinical-note"
+              className="form-input form-textarea"
+              placeholder="Add a clinical note..."
+              style={{ flex: 1 }}
+              value={noteDraft}
+              onChange={e => setNoteDraft(e.target.value)}
+              aria-describedby="clinical-note-hint"
+            />
           </div>
-          <button className="btn-primary btn-md" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <FileText size={14} /> Save Note
+          <div id="clinical-note-hint" style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+            Notes are saved locally for this session only and are not yet synced to the patient record.
+          </div>
+          <button
+            type="button"
+            className="btn-primary btn-md"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            onClick={handleSaveNote}
+            disabled={noteDraft.trim().length === 0}
+          >
+            <FileText size={14} aria-hidden="true" /> Save note locally
           </button>
+          {localNotes.length > 0 && (
+            <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }} aria-live="polite">
+              {localNotes.map(note => (
+                <div key={note.id} style={{ padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 8, border: '1px dashed var(--border)' }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
+                    Saved locally · {formatRelativeTime(note.createdAt)}
+                  </div>
+                  <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{note.text}</div>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ marginTop: 20, padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 8 }}>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Most Recent Note</div>
             <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}>{patient.notes || 'No notes on file.'}</div>
@@ -238,20 +307,21 @@ export function PatientDetail() {
           <div className="card-title" style={{ marginBottom: 16 }}>Vitals Overview</div>
           <div className="two-col">
             {[
-              { label: 'Blood Pressure', value: '128/82 mmHg', status: 'warning' },
-              { label: 'Heart Rate', value: '76 bpm', status: 'stable' },
-              { label: 'Weight', value: '72 kg', status: 'stable' },
-              { label: 'Temperature', value: '37.1°C', status: 'stable' },
+              { label: 'Blood Pressure', value: '128/82 mmHg', status: 'warning' as const },
+              { label: 'Heart Rate', value: '76 bpm', status: 'success' as const },
+              { label: 'Weight', value: '72 kg', status: 'success' as const },
+              { label: 'Temperature', value: '37.1°C', status: 'success' as const },
             ].map(v => (
               <div key={v.label} style={{ padding: '16px', background: 'var(--surface-alt)', borderRadius: 10, border: '1px solid var(--border)' }}>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{v.label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', fontFamily: 'var(--font-mono)' }}>{v.value}</div>
-                <div style={{ marginTop: 8 }}><Badge variant={v.status as 'warning' | 'success'} size="sm">{v.status === 'warning' ? 'Elevated' : 'Normal'}</Badge></div>
+                <div style={{ marginTop: 8 }}><Badge variant={v.status} size="sm">{v.status === 'warning' ? 'Elevated' : 'Normal'}</Badge></div>
               </div>
             ))}
           </div>
         </div>
       )}
+      </div>
     </MedicalLayout>
   );
 }

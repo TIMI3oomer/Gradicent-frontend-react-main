@@ -1,25 +1,53 @@
-import { Bell, Plus, Moon, Sun } from 'lucide-react';
+import { Bell, Plus, Moon, Sun, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
-import { mockNotifications } from '../../data/notifications';
+import { useMedicalNotifications } from '../../components/medical/useMedicalNotifications';
 
 interface MedicalTopBarProps {
   title: string;
   breadcrumb?: string;
   actionLabel?: string;
   actionPath?: string;
+  menuOpen?: boolean;
+  menuButtonId?: string;
+  sidebarId?: string;
+  onMenuToggle?: () => void;
 }
 
-export function MedicalTopBar({ title, breadcrumb, actionLabel, actionPath }: MedicalTopBarProps) {
+export function MedicalTopBar({
+  title,
+  breadcrumb,
+  actionLabel,
+  actionPath,
+  menuOpen = false,
+  menuButtonId,
+  sidebarId,
+  onMenuToggle,
+}: MedicalTopBarProps) {
   const navigate = useNavigate();
   const { isDark, toggleDark } = useTheme();
-  const unreadCount = mockNotifications.filter(n => !n.read && n.domain === 'medical').length;
+  const { unreadCount } = useMedicalNotifications();
 
   return (
     <header className="medical-topbar">
-      <div className="topbar-title-wrap">
-        {breadcrumb && <div className="topbar-breadcrumb">{breadcrumb}</div>}
-        <h1 className="topbar-title">{title}</h1>
+      <div className="medical-topbar-lead">
+        {onMenuToggle && (
+          <button
+            id={menuButtonId}
+            type="button"
+            className="topbar-icon-btn medical-menu-btn"
+            aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={menuOpen}
+            aria-controls={sidebarId}
+            onClick={onMenuToggle}
+          >
+            {menuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+          </button>
+        )}
+        <div className="topbar-title-wrap">
+          {breadcrumb && <div className="topbar-breadcrumb">{breadcrumb}</div>}
+          <h1 className="topbar-title">{title}</h1>
+        </div>
       </div>
       <div className="topbar-actions">
         <button
@@ -43,11 +71,11 @@ export function MedicalTopBar({ title, breadcrumb, actionLabel, actionPath }: Me
         )}
         <button
           className="topbar-icon-btn"
-          aria-label="Notifications"
+          aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
           onClick={() => navigate('/medical/notifications')}
         >
-          <Bell size={18} />
-          {unreadCount > 0 && <span className="notif-badge" aria-label={`${unreadCount} unread`} />}
+          <Bell size={18} aria-hidden="true" />
+          {unreadCount > 0 && <span className="notif-badge" aria-hidden="true" />}
         </button>
       </div>
     </header>

@@ -4,6 +4,7 @@ import { Search, LayoutGrid, LayoutList } from 'lucide-react';
 import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
 import { PatientCard } from '../../components/medical/PatientCard';
 import { DataTable, type Column } from '../../components/shared/DataTable/DataTable';
+import { sortRows, type SortState } from '../../components/shared/DataTable/sortRows';
 import { Badge } from '../../components/shared/Badge';
 import { Pagination } from '../../components/shared/Pagination';
 import { Avatar } from '../../components/shared/Avatar';
@@ -22,6 +23,7 @@ export function Patients() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState>(null);
   const [viewMode, setViewMode] = useLocalStorage<'grid' | 'table'>('patients-view', 'grid');
   const debouncedSearch = useDebounce(search, 300);
 
@@ -35,8 +37,15 @@ export function Patients() {
     });
   }, [debouncedSearch, statusFilter]);
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Sort the full filtered list before slicing so sorting spans every page
+  const sorted = useMemo(() => sortRows(filtered, sort), [filtered, sort]);
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleSortChange = (next: SortState) => {
+    setSort(next);
+    setPage(1);
+  };
 
   const columns: Column<PatientRow>[] = [
     {
@@ -59,7 +68,12 @@ export function Patients() {
     {
       key: 'id', header: '', width: '100px', align: 'right',
       render: (_, row) => (
-        <button className="btn-ghost btn-sm" onClick={() => navigate(`/medical/patients/${row.id}`)}>
+        <button
+          className="btn-ghost btn-sm"
+          aria-label={`View ${row.name}`}
+          onClick={e => { e.stopPropagation(); navigate(`/medical/patients/${row.id}`); }}
+          onKeyDown={e => e.stopPropagation()}
+        >
           View
         </button>
       ),
@@ -132,6 +146,8 @@ export function Patients() {
             columns={columns}
             onRowClick={row => navigate(`/medical/patients/${row.id}`)}
             rowKey="id"
+            sort={sort}
+            onSortChange={handleSortChange}
           />
         </div>
       )}

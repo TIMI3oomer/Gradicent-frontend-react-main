@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { cn } from '../../../lib/cn';
 import { Skeleton } from '../Skeleton';
+import { sortRows, type SortState } from './sortRows';
 
 export interface Column<T> {
   key: keyof T | string;
@@ -23,6 +24,12 @@ interface DataTableProps<T extends object> {
   emptyDescription?: string;
   className?: string;
   rowKey?: keyof T;
+  /**
+   * Controlled sorting: pass when the table only shows one page of a larger list,
+   * so the parent can sort the full list (e.g. with `sortRows`) before slicing.
+   */
+  sort?: SortState;
+  onSortChange?: (sort: SortState) => void;
 }
 
 export function DataTable<T extends object>({
@@ -34,26 +41,31 @@ export function DataTable<T extends object>({
   emptyDescription,
   className,
   rowKey,
+  sort: controlledSort,
+  onSortChange,
 }: DataTableProps<T>) {
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [internalSort, setInternalSort] = useState<SortState>(null);
+  const isControlled = onSortChange !== undefined;
+  const sort = isControlled ? controlledSort ?? null : internalSort;
+  const sortKey = sort?.key ?? null;
+  const sortDir = sort?.dir ?? 'asc';
 
   const handleSort = (key: string) => {
-    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortKey(key); setSortDir('asc'); }
+    const next: SortState = sortKey === key
+      ? { key, dir: sortDir === 'asc' ? 'desc' : 'asc' }
+      : { key, dir: 'asc' };
+    if (isControlled) onSortChange(next);
+    else setInternalSort(next);
   };
 
-  const sorted = useMemo(() => {
-    if (!sortKey) return data;
-    return [...data].sort((a, b) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const av = (a as any)[sortKey] as string | number;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const bv = (b as any)[sortKey] as string | number;
-      const cmp = typeof av === 'number' ? av - (bv as number) : String(av).localeCompare(String(bv));
-      return sortDir === 'asc' ? cmp : -cmp;
-    });
-  }, [data, sortKey, sortDir]);
+  // Guard against API responses that aren't arrays
+  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
+
+  // In controlled mode the parent has already sorted the rows
+  const sorted = useMemo(
+    () => (isControlled ? rows : sortRows(rows, internalSort)),
+    [rows, internalSort, isControlled],
+  );
 
   if (isLoading) {
     return (
@@ -77,6 +89,7 @@ export function DataTable<T extends object>({
                 <th
                   key={String(col.key)}
                   scope="col"
+                  aria-sort={col.sortable && sortKey === String(col.key) ? (sortDir === 'asc' ? 'ascending' : 'descending') : undefined}
                   style={{ width: col.width }}
                   className={cn('data-th', col.align === 'right' && 'text-right', col.align === 'center' && 'text-center')}
                 >
@@ -108,6 +121,12 @@ export function DataTable<T extends object>({
                   key={rowKey ? String((row as Record<string, unknown>)[rowKey as string]) : i}
                   className={cn('data-row', onRowClick && 'data-row-clickable')}
                   onClick={() => onRowClick?.(row)}
+                  tabIndex={onRowClick ? 0 : undefined}
+                  onKeyDown={onRowClick ? (e) => {
+                    // Only react to keys pressed on the row itself, not on buttons inside it
+                    if (e.target !== e.currentTarget) return;
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onRowClick(row); }
+                  } : undefined}
                   initial={{ opacity: 0, x: -4 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: Math.min(i * 0.04, 0.32), duration: 0.2 }}

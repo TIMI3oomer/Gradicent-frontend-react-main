@@ -65,8 +65,9 @@ export function PatientCard({ patient, index = 0 }: PatientCardProps) {
         </button>
         <button
           className="patient-action-icon-btn"
-          aria-label={`Add note for ${patient.name}`}
-          title="Quick note"
+          aria-label={`Add note for ${patient.name} (coming soon)`}
+          title="Coming soon"
+          disabled
         >
           <Note size={14} />
         </button>

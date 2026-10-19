@@ -15,11 +15,20 @@ const navItems = [
   { to: '/medical/account', label: 'Account', icon: UserCircle },
 ];
 
-export function MedicalSidebar() {
+interface MedicalSidebarProps {
+  id?: string;
+  /** Mobile only: whether the off-canvas drawer is open */
+  open?: boolean;
+  onNavigate?: () => void;
+}
+
+export function MedicalSidebar({ id, open = false, onNavigate }: MedicalSidebarProps) {
   const { user, logout } = useAuth();
+  const displayName = user?.name?.trim() || user?.email || 'Signed-in user';
+  const roleLabel = user?.specialty?.trim() || 'Medical provider';
 
   return (
-    <nav className="medical-sidebar" aria-label="Medical navigation">
+    <nav id={id} className={`medical-sidebar${open ? ' is-open' : ''}`} aria-label="Medical navigation">
       <div className="medical-sidebar-logo">
         <div className="sidebar-logo-mark">G</div>
         <div>
@@ -33,6 +42,7 @@ export function MedicalSidebar() {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={onNavigate}
             className={({ isActive }) => `medical-nav-item${isActive ? ' active' : ''}`}
           >
             <item.icon size={18} weight="regular" className="nav-icon" aria-hidden="true" />
@@ -43,15 +53,15 @@ export function MedicalSidebar() {
 
       <div className="medical-sidebar-dock">
         <div className="sidebar-user">
-          <Avatar name={user?.name ?? 'Dr. Alex Morgan'} size="sm" />
+          <Avatar name={displayName} size="sm" />
           <div className="sidebar-user-info">
-            <div className="sidebar-user-name">{user?.name ?? 'Dr. Alex Morgan'}</div>
-            <div className="sidebar-user-role">{user?.specialty ?? 'Physician'}</div>
+            <div className="sidebar-user-name">{displayName}</div>
+            <div className="sidebar-user-role">{roleLabel}</div>
           </div>
         </div>
         <button className="sidebar-logout-btn" onClick={() => logout('medical')}>
           <SignOut size={14} aria-hidden="true" />
-          Logout
+          Sign out
         </button>
       </div>
     </nav>

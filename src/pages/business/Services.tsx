@@ -1,104 +1,139 @@
 import { useState, useEffect } from 'react';
 import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
-import { Badge } from '../../components/shared/Badge';
+import { Badge, type BadgeVariant } from '../../components/shared/Badge';
+import { EmptyState } from '../../components/shared/EmptyState';
+import { ErrorBanner, LoadingState } from '../../components/business/PageStatus';
+import { SIGNED_OUT_MESSAGE, errorMessage, toArray, toNumber } from '../../components/business/apiHelpers';
 import { formatCurrency } from '../../lib/formatters';
-import { Plus, Search } from 'lucide-react';
+import { Briefcase, Plus, Search } from 'lucide-react';
+import type { Service } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 
 export function Services() {
-  const { user } = useAuth();
-  const [services, setServices] = useState<any[]>([]);
+  const { user, isLoading: authLoading } = useAuth();
+  const [services, setServices] = useState<Service[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const loadServiceOfferings = async () => {
-      if (!user?.id) return;
+    if (!user?.id) {
+      if (!authLoading) {
+        setIsLoading(false);
+        setError(SIGNED_OUT_MESSAGE);
+      }
+      return;
+    }
+    const userId = user.id;
+    // Ignore responses from earlier keystrokes that resolve after a newer request
+    let ignore = false;
+
+    const loadServices = async () => {
       try {
         setIsLoading(true);
-        
-        let res;
+        setError(null);
+
         const cleanQuery = search.trim();
+        const res = cleanQuery
+          ? await api.searchEntities<unknown>('/api/binder/services/search', {
+              domain: 'business',
+              user_id: userId,
+              query: cleanQuery,
+            })
+          : await api.fetchList<unknown>('/api/binder/services', {
+              domain: 'business',
+              user_id: userId,
+            });
 
-        if (!cleanQuery) {
-          // Call GET list route when empty
-          res = await api.fetchList<any>('/api/binder/services', {
-            domain: 'business',
-            user_id: user.id
-          });
-        } else {
-          // Call POST search route when text exists
-          res = await api.searchEntities<any>('/api/binder/services/search', {
-            domain: 'business',
-            user_id: user.id,
-            query: cleanQuery
-          });
-        }
-
-        const results = res.data?.services || res.data?.results || res.data || [];
-        setServices(Array.isArray(results) ? results : []);
+        if (ignore) return;
+        setServices(toArray<Service>(res, 'services'));
       } catch (err) {
+        if (ignore) return;
         console.error('[Services] Fetch error:', err);
+        setServices([]);
+        setError(errorMessage(err, 'Could not load your services.'));
       } finally {
-        setIsLoading(false);
+        if (!ignore) setIsLoading(false);
       }
     };
 
-    const delayDebounce = setTimeout(() => {
-      loadServiceOfferings();
-    }, 300);
+    const delayDebounce = setTimeout(loadServices, 300);
 
-    return () => clearTimeout(delayDebounce);
-  }, [user?.id, search]);
+    return () => {
+      ignore = true;
+      clearTimeout(delayDebounce);
+    };
+  }, [user?.id, authLoading, search, reloadKey]);
 
-  const totalRevenue = services.reduce((sum, s) => sum + (s.revenueYTD || 0), 0);
+  const totalRevenue = services.reduce((sum, s) => sum + toNumber(s.revenueYTD), 0);
 
   return (
-    <BusinessLayout title="Services Catalog">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+    <BusinessLayout title="Services">
+      <div className="biz-toolbar">
+        <div className="biz-search">
+          <Search size={16} aria-hidden="true" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
-            type="text"
-            placeholder="Search service items..."
+            type="search"
+            placeholder="Search services..."
+            aria-label="Search services"
             value={search}
             onChange={e => setSearch(e.target.value)}
             style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14 }}
           />
         </div>
-        <button style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}>
-          <Plus size={16} /> Create Offering
+        {/* No create-service form exists yet, so keep the action visible but inactive */}
+        <button
+          type="button"
+          disabled
+          title="Coming soon"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'not-allowed', opacity: 0.55 }}
+        >
+          <Plus size={16} aria-hidden="true" /> Add Service
         </button>
       </div>
 
+      {error && <ErrorBanner message={error} onRetry={user?.id ? () => setReloadKey(k => k + 1) : undefined} />}
+
       {isLoading ? (
-        <div style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>Loading services array...</div>
+        <LoadingState label="Loading services..." padding={48} />
+      ) : error ? null : services.length === 0 ? (
+        <EmptyState
+          icon={<Briefcase size={32} />}
+          title="No Services Found"
+          description={search ? 'No services match your search.' : 'Services you offer will appear here.'}
+        />
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
-          {services.map(svc => {
-            const revenueShare = totalRevenue > 0 ? ((svc.revenueYTD || 0) / totalRevenue) * 100 : 0;
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 340px), 1fr))', gap: 16 }}>
+          {services.map((svc, i) => {
+            const revenue = toNumber(svc.revenueYTD);
+            const revenueShare = totalRevenue > 0 ? (revenue / totalRevenue) * 100 : 0;
             return (
-              <div key={svc.id} className="card" style={{ display: 'flex', gap: 16, alignItems: 'start', justifyContent: 'space-between' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <h4 style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>{svc.name}</h4>
-                    <Badge status={svc.status as any} size="sm" />
+              <div key={svc.id ?? i} className="card" style={{ display: 'flex', gap: 16, alignItems: 'start', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 180px', minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <h4 style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>{svc.name || '—'}</h4>
+                    {svc.status && <Badge status={svc.status as BadgeVariant} size="sm" />}
                   </div>
                   <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-                    <span style={{ padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 11 }}>{svc.category}</span>
-                    <span style={{ padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 11 }}>{svc.billingType}</span>
+                    {svc.category && <span style={{ padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 11 }}>{svc.category}</span>}
+                    {svc.billingType && <span style={{ padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, fontSize: 11 }}>{svc.billingType}</span>}
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>{svc.description}</div>
-                  <div style={{ height: 4, background: 'var(--border)', borderRadius: 2 }}>
+                  {svc.description && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 8 }}>{svc.description}</div>}
+                  <div
+                    style={{ height: 4, background: 'var(--border)', borderRadius: 2 }}
+                    role="img"
+                    aria-label={`${Math.round(revenueShare)}% of revenue`}
+                  >
                     <div style={{ width: `${revenueShare}%`, height: '100%', background: 'var(--primary)', borderRadius: 2 }} />
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(svc.basePrice || 0)}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--primary)', fontFamily: 'var(--font-mono)' }}>{formatCurrency(svc.basePrice)}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>base price</div>
-                  <div style={{ fontSize: 13, color: '#22c55e', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{formatCurrency(svc.revenueYTD || 0)}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>YTD Rev</div>
+                  <div style={{ fontSize: 13, color: '#22c55e', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{formatCurrency(svc.revenueYTD)}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Revenue YTD</div>
                 </div>
               </div>
             );

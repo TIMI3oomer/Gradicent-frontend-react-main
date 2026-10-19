@@ -1,5 +1,6 @@
+import { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Chrome as Home, Users, Package, Briefcase, UserCheck, Calendar, CreditCard, ChartBar as BarChart2, Database, Settings, User, Bell, LogOut, Award } from 'lucide-react';
+import { Chrome as Home, Users, Package, Briefcase, UserCheck, Calendar, CreditCard, ChartBar as BarChart2, Database, Settings, User, Bell, LogOut, Award, X } from 'lucide-react';
 import { Avatar } from '../../components/shared/Avatar';
 import { useAuth } from '../../context/AuthContext';
 
@@ -42,17 +43,40 @@ const navGroups = [
   },
 ];
 
-export function BusinessSidebar() {
+interface BusinessSidebarProps {
+  /** Drawer state on small screens (ignored on desktop where the sidebar is always visible) */
+  open?: boolean;
+  onClose?: () => void;
+}
+
+export function BusinessSidebar({ open = false, onClose }: BusinessSidebarProps) {
   const { user, logout } = useAuth();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const displayName = user?.name?.trim() || user?.email || '';
+  const plan = user?.plan;
+
+  // Move focus into the drawer when it opens so keyboard users land in the navigation
+  useEffect(() => {
+    if (open) closeRef.current?.focus();
+  }, [open]);
 
   return (
-    <nav className="business-sidebar" aria-label="Business navigation">
+    <nav id="biz-sidebar" className={`business-sidebar${open ? ' open' : ''}`} aria-label="Business navigation">
       <div className="business-sidebar-logo">
         <div className="biz-logo-mark">G</div>
         <div>
           <span className="biz-logo-name">Gradicent</span>
           <span className="biz-logo-sub">Business</span>
         </div>
+        <button
+          ref={closeRef}
+          type="button"
+          className="biz-sidebar-close"
+          onClick={onClose}
+          aria-label="Close navigation"
+        >
+          <X size={18} aria-hidden="true" />
+        </button>
       </div>
 
       <div className="business-nav">
@@ -76,12 +100,14 @@ export function BusinessSidebar() {
 
       <div className="business-sidebar-dock">
         <div className="sidebar-user">
-          <Avatar name={user?.name ?? 'Alex Morgan'} size="sm" />
+          <Avatar name={displayName} size="sm" />
           <div className="sidebar-user-info">
-            <div className="sidebar-user-name" style={{ color: '#E8EDF5' }}>{user?.name ?? 'Alex Morgan'}</div>
-            <span className={`plan-badge plan-badge-${(user?.plan ?? 'Pro').toLowerCase()}`}>
-              {user?.plan ?? 'Pro'}
-            </span>
+            <div className="sidebar-user-name" style={{ color: '#E8EDF5' }}>{displayName || '—'}</div>
+            {plan && (
+              <span className={`plan-badge plan-badge-${plan.toLowerCase()}`}>
+                {plan}
+              </span>
+            )}
           </div>
         </div>
         <button className="sidebar-logout-btn" onClick={() => logout('business')} style={{ color: '#5A7090' }}>

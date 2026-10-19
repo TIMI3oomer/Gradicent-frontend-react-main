@@ -45,15 +45,23 @@ interface BadgeProps {
   className?: string;
 }
 
+// API values often arrive lowercase ("active", "paid"), so match variants case-insensitively
+const variantLookup = new Map(
+  (Object.keys(variantMap) as BadgeVariant[]).map(key => [key.toLowerCase(), key] as const),
+);
+
 export function Badge({ status, variant, size = 'md', withDot, children, className }: BadgeProps) {
-  const v = status ?? variant ?? 'default';
+  const raw = status ?? variant;
+  const v: BadgeVariant = (raw && variantLookup.get(String(raw).toLowerCase())) || 'default';
   const colorClass = variantMap[v] ?? 'badge-default';
   const sizeClass = { sm: 'badge-sm', md: 'badge-md', lg: 'badge-lg' }[size];
+  // Never show the internal "default" variant name as a label
+  const label = children ?? (raw ? String(raw) : '—');
 
   return (
     <span className={cn('badge', colorClass, sizeClass, className)}>
       {withDot && <span className={cn('badge-dot', v === 'Active' && 'badge-dot-pulse')} aria-hidden="true" />}
-      {children ?? v}
+      {label}
     </span>
   );
 }

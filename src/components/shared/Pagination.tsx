@@ -23,23 +23,29 @@ export function Pagination({ page, totalPages, onPageChange, totalItems, pageSiz
     return pages;
   };
 
+  // Nothing to page through (empty results or a single page)
+  if (totalPages <= 1 && !totalItems) return null;
+
   const start = totalItems && pageSize ? (page - 1) * pageSize + 1 : undefined;
   const end = totalItems && pageSize ? Math.min(page * pageSize, totalItems) : undefined;
+  const isFirst = page <= 1;
+  const isLast = page >= totalPages;
 
   return (
     <div className={cn('pagination-wrap', className)}>
-      {totalItems && (
+      {totalItems ? (
         <span className="pagination-info">
           Showing {start}–{end} of {totalItems.toLocaleString()}
         </span>
-      )}
+      ) : null}
+      {totalPages > 1 && (
       <div className="pagination-controls">
         {showFirstLast && (
-          <button className="page-btn" onClick={() => onPageChange(1)} disabled={page === 1} aria-label="First page">
+          <button className="page-btn" onClick={() => onPageChange(1)} disabled={isFirst} aria-label="First page">
             <ChevronsLeft size={14} />
           </button>
         )}
-        <button className="page-btn" onClick={() => onPageChange(page - 1)} disabled={page === 1} aria-label="Previous page">
+        <button className="page-btn" onClick={() => onPageChange(page - 1)} disabled={isFirst} aria-label="Previous page">
           <ChevronLeft size={14} />
         </button>
         {getPages().map((p, i) =>
@@ -57,15 +63,16 @@ export function Pagination({ page, totalPages, onPageChange, totalItems, pageSiz
             </button>
           )
         )}
-        <button className="page-btn" onClick={() => onPageChange(page + 1)} disabled={page === totalPages} aria-label="Next page">
+        <button className="page-btn" onClick={() => onPageChange(page + 1)} disabled={isLast} aria-label="Next page">
           <ChevronRight size={14} />
         </button>
         {showFirstLast && (
-          <button className="page-btn" onClick={() => onPageChange(totalPages)} disabled={page === totalPages} aria-label="Last page">
+          <button className="page-btn" onClick={() => onPageChange(totalPages)} disabled={isLast} aria-label="Last page">
             <ChevronsRight size={14} />
           </button>
         )}
       </div>
+      )}
     </div>
   );
 }

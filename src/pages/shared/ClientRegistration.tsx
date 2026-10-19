@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, ChevronLeft, CircleCheck as CheckCircle2, ShieldAlert, UserRoundPlus } from 'lucide-react';
@@ -6,7 +6,7 @@ import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
 import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
 import { useAuth } from '../../context/AuthContext';
 import { BUSINESS_ROUTES, MEDICAL_ROUTES } from '../../lib/constants';
-import { fetchPlanStatus, fetchUserId, submitClientRegistration, trackUsageTime } from '../../lib/api';
+import { fetchPlanStatus, submitClientRegistration, trackUsageTime } from '../../lib/api';
 
 type Domain = 'business' | 'medical';
 
@@ -59,6 +59,30 @@ function createInitialForm(fields: FieldSpec[]) {
   }, {});
 }
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[+\d\s().-]+$/;
+
+/** Returns an inline error message for a field, or null when the value is acceptable. */
+function validateField(field: FieldSpec, rawValue: string): string | null {
+  const value = rawValue.trim();
+  if (!value) return field.required ? `${field.label} is required.` : null;
+
+  if (field.type === 'email' && !EMAIL_PATTERN.test(value)) {
+    return 'Enter a valid email address, e.g. name@example.com.';
+  }
+  if (field.type === 'tel') {
+    const digits = value.replace(/\D/g, '');
+    if (!PHONE_PATTERN.test(value) || digits.length < 7 || digits.length > 15) {
+      return 'Enter a valid phone number (7–15 digits).';
+    }
+  }
+  if (field.type === 'number') {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < 0) return `${field.label} must be a positive number.`;
+  }
+  return null;
+}
+
 function collectPayload(fields: FieldSpec[], form: Record<string, string>) {
   return fields.reduce<Record<string, unknown>>((acc, field) => {
     const raw = form[field.id]?.trim() ?? '';
@@ -86,55 +110,84 @@ export function ClientRegistration({ domain: forcedDomain }: { domain?: Domain }
   const domain = forcedDomain ?? detectDomain(location.pathname, location.search);
   const fields = useMemo(() => FIELD_MAP[domain], [domain]);
   const [form, setForm] = useState<Record<string, string>>(() => createInitialForm(fields));
-  const [userId, setUserId] = useState<string | number | null>(null);
+  // The signed-in user is already known from the auth context; no need to re-fetch /api/auth/me
+  const userId = user?.id ?? null;
   const [planStatus, setPlanStatus] = useState<string>(user?.plan?.toLowerCase() ?? 'basic');
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  // Inline validation: show a field's error once it has been touched or a submit was attempted
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const isMedical = domain === 'medical';
   const Layout = isMedical ? MedicalLayout : BusinessLayout;
   const title = isMedical ? 'Register Patient' : 'Add Client';
   const subtitle = isMedical
-    ? 'Capture a new patient record using the shared binder fields and route it into the medical workspace.'
-    : 'Create a new client record with the same binder contract used by the legacy form.';
+    ? 'Add a new patient to your medical workspace.'
+    : 'Add a new client to your business workspace.';
   const targetRoute = isMedical ? MEDICAL_ROUTES.PATIENTS : BUSINESS_ROUTES.CLIENTS;
 
   useEffect(() => {
     setForm(createInitialForm(fields));
+    setTouched({});
+    setSubmitAttempted(false);
   }, [fields]);
 
   useEffect(() => {
     let active = true;
-    const start = Date.now();
 
-    void Promise.all([fetchUserId(), fetchPlanStatus(domain, user?.id ?? null)])
-      .then(([resolvedUserId, resolvedPlan]) => {
-        if (!active) return;
-        setUserId(resolvedUserId);
-        setPlanStatus(resolvedPlan);
+    void fetchPlanStatus(domain, userId)
+      .then(resolvedPlan => {
+        if (active) setPlanStatus(resolvedPlan);
       })
       .catch(() => {
-        if (!active) return;
-        setPlanStatus(user?.plan?.toLowerCase() ?? 'basic');
+        if (active) setPlanStatus(user?.plan?.toLowerCase() ?? 'basic');
       });
-
-    const interval = window.setInterval(() => {
-      void trackUsageTime(60);
-    }, 60000);
 
     return () => {
       active = false;
-      window.clearInterval(interval);
-      const elapsedSeconds = Math.max(1, Math.round((Date.now() - start) / 1000));
-      void trackUsageTime(elapsedSeconds);
     };
-  }, [domain, user?.id, user?.plan]);
+  }, [domain, userId, user?.plan]);
 
-  const isValid = fields.every(field => !field.required || form[field.id].trim().length > 0);
+  // Usage tracking: report only the time elapsed since the previous report so nothing is
+  // counted twice, and never let a tracking failure surface as an unhandled rejection.
+  useEffect(() => {
+    let lastReport = Date.now();
+    const report = () => {
+      const now = Date.now();
+      const seconds = Math.round((now - lastReport) / 1000);
+      lastReport = now;
+      if (seconds > 0) trackUsageTime(seconds).catch(() => {});
+    };
 
-  async function handleSubmit() {
-    if (!isValid || loading) return;
+    const interval = window.setInterval(report, 60000);
+    return () => {
+      window.clearInterval(interval);
+      report();
+    };
+  }, []);
+
+  const errors = useMemo(() => {
+    const next: Record<string, string> = {};
+    for (const field of fields) {
+      const error = validateField(field, form[field.id] ?? '');
+      if (error) next[field.id] = error;
+    }
+    return next;
+  }, [fields, form]);
+  const isValid = Object.keys(errors).length === 0;
+
+  async function handleSubmit(e?: FormEvent<HTMLFormElement>) {
+    e?.preventDefault();
+    if (loading) return;
+    if (!isValid) {
+      setSubmitAttempted(true);
+      // Move focus to the first field that needs attention
+      const firstInvalid = fields.find(field => errors[field.id]);
+      if (firstInvalid) document.getElementById(firstInvalid.id)?.focus();
+      return;
+    }
 
     setLoading(true);
     setStatus('idle');
@@ -188,8 +241,8 @@ export function ClientRegistration({ domain: forcedDomain }: { domain?: Domain }
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span className="badge" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>Domain: {domain}</span>
-              <span className="badge" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>Plan: {planStatus}</span>
+              <span className="badge" style={{ background: 'var(--surface)', border: '1px solid var(--border)', textTransform: 'capitalize' }}>{domain} workspace</span>
+              <span className="badge" style={{ background: 'var(--surface)', border: '1px solid var(--border)', textTransform: 'capitalize' }}>{planStatus} plan</span>
             </div>
           </div>
         </div>
@@ -214,78 +267,90 @@ export function ClientRegistration({ domain: forcedDomain }: { domain?: Domain }
               )}
             </motion.div>
           ) : (
-            <motion.div
+            <motion.form
               key="form"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               className="card"
               style={{ padding: 24 }}
+              onSubmit={handleSubmit}
+              noValidate
             >
               <div className="medical-form-grid medical-form-grid--three">
-                {fields.map(field => (
-                  <div key={field.id} className="form-group" style={field.type === 'textarea' ? { gridColumn: 'span 2' } : undefined}>
-                    <label className="form-label" htmlFor={field.id}>{field.label}{field.required ? ' *' : ''}</label>
-                    {field.type === 'textarea' ? (
-                      <textarea
-                        id={field.id}
-                        className="form-input form-textarea"
-                        placeholder={field.placeholder}
-                        value={form[field.id]}
-                        onChange={e => setForm(prev => ({ ...prev, [field.id]: e.target.value }))}
-                      />
-                    ) : field.type === 'select' ? (
-                      <select
-                        id={field.id}
-                        className="form-input form-select"
-                        value={form[field.id]}
-                        onChange={e => setForm(prev => ({ ...prev, [field.id]: e.target.value }))}
-                      >
-                        <option value="">{field.placeholder}</option>
-                        {field.options?.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        id={field.id}
-                        className="form-input"
-                        type={field.type ?? 'text'}
-                        placeholder={field.placeholder}
-                        value={form[field.id]}
-                        onChange={e => setForm(prev => ({ ...prev, [field.id]: e.target.value }))}
-                      />
-                    )}
-                  </div>
-                ))}
+                {fields.map(field => {
+                  const error = (touched[field.id] || submitAttempted) ? errors[field.id] : undefined;
+                  const errorId = `${field.id}-error`;
+                  const common = {
+                    id: field.id,
+                    value: form[field.id],
+                    'aria-invalid': error ? true : undefined,
+                    'aria-describedby': error ? errorId : undefined,
+                    'aria-required': field.required || undefined,
+                    onBlur: () => setTouched(prev => ({ ...prev, [field.id]: true })),
+                  };
+                  return (
+                    <div key={field.id} className={`form-group${field.type === 'textarea' ? ' medical-span-2' : ''}`}>
+                      <label className="form-label" htmlFor={field.id}>{field.label}{field.required ? ' *' : ''}</label>
+                      {field.type === 'textarea' ? (
+                        <textarea
+                          {...common}
+                          className="form-input form-textarea"
+                          placeholder={field.placeholder}
+                          onChange={e => setForm(prev => ({ ...prev, [field.id]: e.target.value }))}
+                        />
+                      ) : field.type === 'select' ? (
+                        <select
+                          {...common}
+                          className="form-input form-select"
+                          onChange={e => setForm(prev => ({ ...prev, [field.id]: e.target.value }))}
+                        >
+                          <option value="">{field.placeholder}</option>
+                          {field.options?.map(option => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          {...common}
+                          className="form-input"
+                          type={field.type ?? 'text'}
+                          inputMode={field.type === 'tel' ? 'tel' : field.type === 'number' ? 'numeric' : undefined}
+                          placeholder={field.placeholder}
+                          onChange={e => setForm(prev => ({ ...prev, [field.id]: e.target.value }))}
+                        />
+                      )}
+                      {error && <div id={errorId} className="form-error">{error}</div>}
+                    </div>
+                  );
+                })}
               </div>
 
               {status === 'error' && (
-                <div style={{ marginTop: 16, padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', color: 'var(--text)' }}>
+                <div role="alert" style={{ marginTop: 16, padding: '12px 14px', borderRadius: 12, background: 'rgba(239,68,68,0.08)', color: 'var(--text)' }}>
                   {message}
                 </div>
               )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
                 <button className="btn-ghost btn-md" onClick={() => navigate(targetRoute)} type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <ChevronLeft size={16} /> Back
+                  <ChevronLeft size={16} aria-hidden="true" /> Back
                 </button>
 
                 <button
                   className="btn-primary btn-md"
-                  onClick={handleSubmit}
-                  disabled={!isValid || loading}
-                  type="button"
+                  disabled={loading}
+                  type="submit"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
                 >
-                  {loading ? <span className="btn-spinner" /> : <UserRoundPlus size={16} />}
+                  {loading ? <span className="btn-spinner" aria-hidden="true" /> : <UserRoundPlus size={16} aria-hidden="true" />}
                   {loading ? 'Saving...' : 'Save Record'}
                 </button>
               </div>
-            </motion.div>
+            </motion.form>
           )}
         </AnimatePresence>
       </div>
     </Layout>
   );
-}
+}

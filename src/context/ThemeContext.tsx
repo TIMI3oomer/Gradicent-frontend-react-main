@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useCallback, type ReactNode } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 interface ThemeContextValue {
@@ -10,12 +10,9 @@ const ThemeContext = createContext<ThemeContextValue>({ isDark: false, toggleDar
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useLocalStorage('gradicent-dark-mode', false);
-  const [, setAnimating] = useState(false);
 
   const toggleDark = useCallback(() => {
-    setAnimating(true);
     setIsDark(!isDark);
-    setTimeout(() => setAnimating(false), 600);
   }, [isDark, setIsDark]);
 
   return (

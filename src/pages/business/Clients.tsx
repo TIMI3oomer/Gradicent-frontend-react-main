@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Users, LayoutGrid, List, Search, Plus } from 'lucide-react';
 import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
 import { DataTable, type Column } from '../../components/shared/DataTable/DataTable';
-import { Badge } from '../../components/shared/Badge';
+import { sortRows, type SortState } from '../../components/shared/DataTable/sortRows';
+import { Badge, type BadgeVariant } from '../../components/shared/Badge';
 import { PlanBadge } from '../../components/business/PlanBadge';
+import { ErrorBanner, LoadingState } from '../../components/business/PageStatus';
+import { SIGNED_OUT_MESSAGE, errorMessage, toArray } from '../../components/business/apiHelpers';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Pagination } from '../../components/shared/Pagination';
 import { BUSINESS_ROUTES } from '../../lib/constants';
@@ -14,81 +17,93 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 
 const PAGE_SIZE = 10;
+type PlanFilter = 'All' | 'Basic' | 'Pro' | 'Enterprise';
 
 export function Clients() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  
+  const { user, isLoading: authLoading } = useAuth();
+
   // Live Data State
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Filter State
   const [search, setSearch] = useState('');
-  const [planFilter, setPlanFilter] = useState<'All' | 'Basic' | 'Pro' | 'Enterprise'>('All');
+  const [planFilter, setPlanFilter] = useState<PlanFilter>('All');
   const [view, setView] = useState<'table' | 'cards'>('table');
   const [page, setPage] = useState(1);
+  const [sort, setSort] = useState<SortState>(null);
 
-  // Sync with Backend: Toggle between List and Search based on input presence
+  // Sync with Backend: GET list when the search box is empty, POST search otherwise
   useEffect(() => {
+    if (!user?.id) {
+      if (!authLoading) {
+        setIsLoading(false);
+        setError(SIGNED_OUT_MESSAGE);
+      }
+      return;
+    }
+    const userId = user.id;
+    // Ignore responses from earlier keystrokes that resolve after a newer request
+    let ignore = false;
+
     const fetchClientsData = async () => {
-      if (!user?.id) return;
       try {
         setIsLoading(true);
         setError(null);
-        
-        let res;
+
         const cleanQuery = search.trim();
+        const res = cleanQuery
+          ? await api.searchEntities<unknown>('/api/binder/client/search', {
+              domain: 'business',
+              user_id: userId,
+              query: cleanQuery,
+            })
+          : await api.fetchList<unknown>('/api/binder/clients', {
+              domain: 'business',
+              user_id: userId,
+            });
 
-        if (!cleanQuery) {
-          // Default state: standard GET list route
-          res = await api.fetchList<any>('/api/binder/clients', {
-            domain: 'business',
-            user_id: user.id
-          });
-        } else {
-          // User searching state: POST search route
-          res = await api.searchEntities<any>('/api/binder/clients/search', {
-            domain: 'business',
-            user_id: user.id,
-            query: cleanQuery
-          });
-        }
-
-        // Unpack payload dynamically matching either listing wrapper or pure search arrays
-        const results = res.data?.clients || res.data?.results || res.data || [];
-        setClients(Array.isArray(results) ? results : []);
-      } catch (err: any) {
-        console.error('[Clients Workspace] Sync Error:', err);
-        setError(err.message || 'Failed to populate clients workspace.');
+        if (ignore) return;
+        setClients(toArray<Client>(res, 'clients'));
+      } catch (err) {
+        if (ignore) return;
+        console.error('[Clients] Fetch error:', err);
+        setClients([]);
+        setError(errorMessage(err, 'Could not load your clients.'));
       } finally {
-        setIsLoading(false);
+        if (!ignore) setIsLoading(false);
       }
     };
 
     // Simple 300ms debounce window to prevent continuous backend thrashing
-    const delayDebounce = setTimeout(() => {
-      fetchClientsData();
-    }, 300);
+    const delayDebounce = setTimeout(fetchClientsData, 300);
 
-    return () => clearTimeout(delayDebounce);
-  }, [user?.id, search]);
+    return () => {
+      ignore = true;
+      clearTimeout(delayDebounce);
+    };
+  }, [user?.id, authLoading, search, reloadKey]);
 
   // Client side structural categorizations
   const filtered = useMemo(() => {
-    return clients.filter(c => {
-      if (planFilter !== 'All' && (c.plan || '').toLowerCase() !== planFilter.toLowerCase()) return false;
+    const rows = clients.filter(c => {
+      if (planFilter !== 'All' && String(c.plan ?? '').toLowerCase() !== planFilter.toLowerCase()) return false;
       return true;
     });
-  }, [clients, planFilter]);
+    return sortRows(rows, sort);
+  }, [clients, planFilter, sort]);
 
   const paginated = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, page]);
 
-  useEffect(() => { setPage(1); }, [planFilter, search]);
+  useEffect(() => { setPage(1); }, [planFilter, search, sort]);
+
+  const openClient = (id: string) => navigate(`${BUSINESS_ROUTES.CLIENTS}/${encodeURIComponent(id)}`);
 
   const columns: Column<Client>[] = [
     {
@@ -96,30 +111,34 @@ export function Clients() {
       header: 'Client / Company',
       sortable: true,
       render: (v, row) => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }} onClick={() => navigate(`${BUSINESS_ROUTES.CLIENTS}/${row.id}`)}>
-          <div>
-            <div style={{ fontWeight: 600, color: 'var(--text)' }}>{String(v)}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.email}</div>
-          </div>
+        <div>
+          <div style={{ fontWeight: 600, color: 'var(--text)' }}>{v ? String(v) : '—'}</div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{row.email}</div>
         </div>
       ),
     },
-    { key: 'industry', header: 'Industry', sortable: true },
-    { key: 'plan', header: 'Tier', render: v => <PlanBadge plan={v as any} /> },
-    { key: 'status', header: 'Status', render: v => <Badge status={v as any} size="sm" /> },
-    { key: 'mrr', header: 'MRR', align: 'right', sortable: true, render: v => <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{formatCurrency(Number(v))}</span> },
-    { key: 'lastInteraction', header: 'Last Touchpoint', sortable: true, render: v => <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{formatDate(String(v))}</span> }
+    { key: 'industry', header: 'Industry', sortable: true, render: v => (v ? String(v) : '—') },
+    { key: 'plan', header: 'Tier', render: v => (v ? <PlanBadge plan={v as Client['plan']} /> : '—') },
+    { key: 'status', header: 'Status', render: v => <Badge status={v as BadgeVariant} size="sm" /> },
+    { key: 'mrr', header: 'MRR', align: 'right', sortable: true, render: v => <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{formatCurrency(v)}</span> },
+    { key: 'lastInteraction', header: 'Last Contact', sortable: true, render: v => <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{formatDate(v)}</span> },
   ];
 
+  const toggleBtnStyle = (active: boolean) => ({
+    padding: 8, background: active ? 'var(--surface)' : 'transparent', border: 0,
+    color: active ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer',
+  });
+
   return (
-    <BusinessLayout title="Clients Workspace">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 280 }}>
-          <div style={{ position: 'relative', flex: 1, maxWidth: 360 }}>
-            <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+    <BusinessLayout title="Clients">
+      <div className="biz-toolbar">
+        <div className="biz-toolbar-filters">
+          <div className="biz-search">
+            <Search size={16} aria-hidden="true" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
-              type="text"
-              placeholder="Search clients across index..."
+              type="search"
+              placeholder="Search clients..."
+              aria-label="Search clients"
               value={search}
               onChange={e => setSearch(e.target.value)}
               style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14 }}
@@ -127,10 +146,11 @@ export function Clients() {
           </div>
           <select
             value={planFilter}
-            onChange={e => setPlanFilter(e.target.value as any)}
+            aria-label="Filter by plan"
+            onChange={e => setPlanFilter(e.target.value as PlanFilter)}
             style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14 }}
           >
-            <option value="All">All Tiers</option>
+            <option value="All">All Plans</option>
             <option value="Basic">Basic</option>
             <option value="Pro">Pro</option>
             <option value="Enterprise">Enterprise</option>
@@ -138,49 +158,61 @@ export function Clients() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }}>
-            <button onClick={() => setView('table')} style={{ padding: 8, background: view === 'table' ? 'var(--surface)' : 'transparent', border: 0, color: view === 'table' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer' }}><List size={16} /></button>
-            <button onClick={() => setView('cards')} style={{ padding: 8, background: view === 'cards' ? 'var(--surface)' : 'transparent', border: 0, color: view === 'cards' ? 'var(--primary)' : 'var(--text-muted)', cursor: 'pointer' }}><LayoutGrid size={16} /></button>
+          <div style={{ display: 'flex', border: '1px solid var(--border)', borderRadius: 6, overflow: 'hidden' }} role="group" aria-label="View">
+            <button type="button" aria-label="Table view" aria-pressed={view === 'table'} onClick={() => setView('table')} style={toggleBtnStyle(view === 'table')}><List size={16} aria-hidden="true" /></button>
+            <button type="button" aria-label="Card view" aria-pressed={view === 'cards'} onClick={() => setView('cards')} style={toggleBtnStyle(view === 'cards')}><LayoutGrid size={16} aria-hidden="true" /></button>
           </div>
-          <button style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}><Plus size={16} /> Add Client</button>
+          <button
+            type="button"
+            onClick={() => navigate(BUSINESS_ROUTES.CLIENTS_ADD)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
+          >
+            <Plus size={16} aria-hidden="true" /> Add Client
+          </button>
         </div>
       </div>
 
-      {error && (
-        <div style={{ padding: 16, background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', borderRadius: 6, color: '#ef4444', marginBottom: 20, fontSize: 14 }}>
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={user?.id ? () => setReloadKey(k => k + 1) : undefined} />}
 
       {isLoading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 0', color: 'var(--text-muted)' }}>
-          <div className="spinner" style={{ width: 24, height: 24, border: '2px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: 12 }} />
-          <span>Synchronizing clients database...</span>
-        </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState icon={<Users size={32} />} title="No Clients Found" description={search ? "No entries matched your custom query expressions." : "Get started by provisioning your business domain's first active client node."} />
+        <LoadingState label="Loading clients..." />
+      ) : error ? null : filtered.length === 0 ? (
+        <EmptyState
+          icon={<Users size={32} />}
+          title="No Clients Found"
+          description={search || planFilter !== 'All' ? 'No clients match your search or filters.' : 'Add your first client to get started.'}
+        />
       ) : (
         <>
           {view === 'table' ? (
             <div className="card" style={{ padding: 0, overflowX: 'auto' }}>
-              <DataTable data={paginated} columns={columns} rowKey="id" />
+              <DataTable data={paginated} columns={columns} rowKey="id" onRowClick={row => openClient(row.id)} sort={sort} onSortChange={setSort} />
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
               {paginated.map(c => (
-                <div key={c.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12, cursor: 'pointer' }} onClick={() => navigate(`${BUSINESS_ROUTES.CLIENTS}/${c.id}`)}>
-                  <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div>
-                        <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 15 }}>{c.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{c.email}</div>
-                      </div>
+                <div
+                  key={c.id}
+                  className="card biz-clickable"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open ${c.name || 'client'}`}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+                  onClick={() => openClient(c.id)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openClient(c.id); }
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'start', justifyContent: 'space-between', gap: 8 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: 15 }}>{c.name || '—'}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.email}</div>
                     </div>
-                    <Badge status={c.status as any} size="sm" />
+                    <Badge status={c.status as BadgeVariant} size="sm" />
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <PlanBadge plan={c.plan} size="sm" />
+                      {c.plan && <PlanBadge plan={c.plan} size="sm" />}
                       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{c.industry}</span>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>

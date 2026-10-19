@@ -66,9 +66,14 @@ async function readResponse(res: Response) {
 }
 
 export async function safeFetch(url: string, opts: RequestInitWithTimeout = {}): Promise<ApiResponse> {
-  const { timeoutMs = 10000, ...requestInit } = opts;
+  const { timeoutMs = 10000, signal: callerSignal, ...requestInit } = opts;
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  // Honour cancellation from the caller as well as our own timeout
+  if (callerSignal) {
+    if (callerSignal.aborted) controller.abort();
+    else callerSignal.addEventListener('abort', () => controller.abort(), { once: true });
+  }
   let res: Response;
   url = url.startsWith('http') ? url : `${baseURL}${url}`;
 
@@ -93,6 +98,9 @@ export async function safeFetch(url: string, opts: RequestInitWithTimeout = {}):
   } catch (networkErr) {
     window.clearTimeout(timeoutId);
     const error = networkErr instanceof Error ? networkErr : new Error(String(networkErr));
+    if (error.name === 'AbortError' && callerSignal?.aborted) {
+      throw new Error('Request cancelled');
+    }
     if (error.name === 'AbortError') {
       console.error('[API] Request timed out:', url);
       throw new Error(`Request timed out after ${timeoutMs}ms`);
@@ -110,6 +118,11 @@ export async function safeFetch(url: string, opts: RequestInitWithTimeout = {}):
 
   if (!parsed.isJson) {
     throw new Error(asMessage(parsed.data?.message, 'Server returned non-JSON response'));
+  }
+
+  // Some endpoints report failures as HTTP 200 with { status: 'error' }
+  if ((parsed.data as JsonRecord | undefined)?.status === 'error') {
+    throw new Error(asMessage(parsed.data?.message, 'Request failed'));
   }
 
   return parsed.data as ApiResponse;
