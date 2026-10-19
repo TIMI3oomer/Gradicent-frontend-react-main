@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CircleCheck as CheckCircle2 } from 'lucide-react';
@@ -7,6 +7,7 @@ import { MEDICAL_ROUTES } from '../../lib/constants';
 import { useAuth } from '../../context/AuthContext';
 import { fetchPlanStatus, submitClientRegistration } from '../../lib/api';
 import { parseDate, toLocalIsoDate } from '../../lib/formatters';
+import { errorMessage } from '../../components/shared/apiHelpers';
 
 const STEPS = ['Personal Information', 'Medical Information', 'Assignment & Scheduling'];
 
@@ -131,6 +132,9 @@ export function AddPatient() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const redirectTimer = useRef<number | undefined>(undefined);
+  // Don't navigate away later if the user already left this page
+  useEffect(() => () => window.clearTimeout(redirectTimer.current), []);
   const [submitError, setSubmitError] = useState('');
   const [errors, setErrors] = useState<Errors>({});
   const [form, setForm] = useState<PatientForm>({
@@ -207,10 +211,9 @@ export function AddPatient() {
         user.id,
       );
       setDone(true);
-      window.setTimeout(() => navigate(MEDICAL_ROUTES.PATIENTS), 1800);
+      redirectTimer.current = window.setTimeout(() => navigate(MEDICAL_ROUTES.PATIENTS), 1800);
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setSubmitError(message || 'Failed to save the patient. Please try again.');
+      setSubmitError(errorMessage(error, 'Failed to save the patient. Please try again.'));
     } finally {
       setLoading(false);
     }

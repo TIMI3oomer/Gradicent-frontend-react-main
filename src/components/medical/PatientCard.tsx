@@ -46,12 +46,12 @@ export function PatientCard({ patient, index = 0 }: PatientCardProps) {
 
       <div className="patient-card-detail">
         <CalendarDots size={12} aria-hidden="true" />
-        <span>Last visit: {formatDate(patient.lastVisit, 'short')}</span>
+        <span>Last visit: {formatDate(patient.lastVisit)}</span>
       </div>
 
       {patient.nextAppointment ? (
         <div className="patient-card-next">
-          Next: {formatDate(patient.nextAppointment, 'short')}
+          Next: {formatDate(patient.nextAppointment)}
         </div>
       ) : (
         <div className="patient-card-no-appt">No upcoming appointment</div>

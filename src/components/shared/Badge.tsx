@@ -7,7 +7,8 @@ export type BadgeVariant =
   | 'Scheduled' | 'Completed' | 'No-show'
   | 'success' | 'warning' | 'error' | 'info' | 'default'
   | 'On Leave' | 'Terminated'
-  | 'Discontinued' | 'Draft' | 'Inactive';
+  | 'Discontinued' | 'Draft' | 'Inactive'
+  | 'Locked' | 'Open';
 
 const variantMap: Record<BadgeVariant, string> = {
   Active: 'badge-success',
@@ -29,6 +30,8 @@ const variantMap: Record<BadgeVariant, string> = {
   Discontinued: 'badge-danger',
   Draft: 'badge-warning',
   Inactive: 'badge-default',
+  Locked: 'badge-success',
+  Open: 'badge-info',
   success: 'badge-success',
   warning: 'badge-warning',
   error: 'badge-danger',

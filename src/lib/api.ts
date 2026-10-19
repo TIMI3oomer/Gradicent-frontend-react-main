@@ -35,6 +35,17 @@ function appendQuery(url: string, query: QueryInput) {
   return `${url}${toQueryString(query)}`;
 }
 
+/** Error thrown by safeFetch; `status` is the HTTP status when the server answered. */
+export class ApiError extends Error {
+  status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 async function readResponse(res: Response) {
   const contentType = (res.headers.get('content-type') || '').toLowerCase();
   const isJson = contentType.includes('application/json');
@@ -113,16 +124,17 @@ export async function safeFetch(url: string, opts: RequestInitWithTimeout = {}):
   const parsed = await readResponse(res);
 
   if (!res.ok) {
-    throw new Error(asMessage(parsed.data?.message, `HTTP ${res.status}`));
+    if (!parsed.isJson) console.error(`[API] HTTP ${res.status} from ${url}:`, parsed.data?.message);
+    throw new ApiError(asMessage(parsed.data?.message, `HTTP ${res.status}`), res.status);
   }
 
   if (!parsed.isJson) {
-    throw new Error(asMessage(parsed.data?.message, 'Server returned non-JSON response'));
+    throw new ApiError(asMessage(parsed.data?.message, 'Server returned non-JSON response'), res.status);
   }
 
   // Some endpoints report failures as HTTP 200 with { status: 'error' }
   if ((parsed.data as JsonRecord | undefined)?.status === 'error') {
-    throw new Error(asMessage(parsed.data?.message, 'Request failed'));
+    throw new ApiError(asMessage(parsed.data?.message, 'Request failed'), res.status);
   }
 
   return parsed.data as ApiResponse;

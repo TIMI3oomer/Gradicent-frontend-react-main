@@ -7,6 +7,7 @@ import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
 import { useAuth } from '../../context/AuthContext';
 import { BUSINESS_ROUTES, MEDICAL_ROUTES } from '../../lib/constants';
 import { fetchPlanStatus, submitClientRegistration, trackUsageTime } from '../../lib/api';
+import { errorMessage } from '../../components/shared/apiHelpers';
 
 type Domain = 'business' | 'medical';
 
@@ -217,9 +218,8 @@ export function ClientRegistration({ domain: forcedDomain }: { domain?: Domain }
         }, 800);
       }
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
       setStatus('error');
-      setMessage(err.message || 'Failed to save the record.');
+      setMessage(errorMessage(error, 'Failed to save the record.'));
     } finally {
       setLoading(false);
     }

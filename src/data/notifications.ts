@@ -5,7 +5,7 @@ export const mockNotifications: Notification[] = [
     id: 'NOT-001', type: 'warning', domain: 'medical', title: 'High-Risk Patient Alert',
     message: 'Rosa Martinez has reported chest pain. Urgent follow-up required.',
     read: false, createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    link: '/medical/patients/PAT-009',
+    link: '/medical/patients',
   },
   {
     id: 'NOT-002', type: 'success', domain: 'business', title: 'Payment Received',
@@ -17,7 +17,7 @@ export const mockNotifications: Notification[] = [
     id: 'NOT-003', type: 'info', domain: 'medical', title: 'New Patient Registered',
     message: 'Kevin Nguyen (PAT-014) has completed registration.',
     read: false, createdAt: new Date(Date.now() - 1000 * 60 * 90).toISOString(),
-    link: '/medical/patients/PAT-014',
+    link: '/medical/patients',
   },
   {
     id: 'NOT-004', type: 'error', domain: 'business', title: 'Payment Failed',
@@ -29,7 +29,7 @@ export const mockNotifications: Notification[] = [
     id: 'NOT-005', type: 'info', domain: 'business', title: 'New Client Lead',
     message: 'Kim Beauty Labs has signed up for a free trial.',
     read: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
-    link: '/business/clients/CLT-013',
+    link: '/business/clients',
   },
   {
     id: 'NOT-006', type: 'success', domain: 'medical', title: 'Appointment Completed',
@@ -53,7 +53,7 @@ export const mockNotifications: Notification[] = [
     id: 'NOT-009', type: 'success', domain: 'business', title: 'Deal Closed',
     message: 'Jordan Blake closed a 2-year renewal with Stafford Logistics.',
     read: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(),
-    link: '/business/clients/CLT-014',
+    link: '/business/clients',
   },
   {
     id: 'NOT-010', type: 'info', domain: 'medical', title: 'Appointment Reminder',
@@ -65,7 +65,7 @@ export const mockNotifications: Notification[] = [
     id: 'NOT-011', type: 'warning', domain: 'medical', title: 'Medication Review Due',
     message: 'Mei-Ling Zhang is due for her quarterly medication review.',
     read: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    link: '/medical/patients/PAT-007',
+    link: '/medical/patients',
   },
   {
     id: 'NOT-012', type: 'error', domain: 'system', title: 'Integration Sync Failed',
@@ -77,13 +77,13 @@ export const mockNotifications: Notification[] = [
     id: 'NOT-013', type: 'success', domain: 'business', title: 'Enterprise Upgrade',
     message: 'Mason & Associates has upgraded from Pro to Enterprise plan.',
     read: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
-    link: '/business/clients/CLT-002',
+    link: '/business/clients',
   },
   {
     id: 'NOT-014', type: 'info', domain: 'medical', title: 'Lab Results Ready',
     message: 'Blood work results for Marcus Williams are now available.',
     read: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(),
-    link: '/medical/patients/PAT-002',
+    link: '/medical/patients',
   },
   {
     id: 'NOT-015', type: 'info', domain: 'system', title: 'Weekly Summary',

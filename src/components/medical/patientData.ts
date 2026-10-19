@@ -156,8 +156,11 @@ export async function fetchPatient(userId: string | number, id: string): Promise
   const query = api.getContextQuery(MEDICAL_DOMAIN, userId);
   try {
     const res = await api.fetchOne<unknown>(CLIENTS_ENDPOINT, id, query);
-    // normalizePatient also looks inside { client: {...} } wrappers
-    return normalizePatient(toRecord(res));
+    // normalizePatient also looks inside { client: {...} } wrappers. Single-record payloads may omit
+    // the id (it's already in the URL), so fall back to the requested id rather than "not found".
+    const record = toRecord<Record<string, unknown>>(res);
+    if (!record) return null;
+    return normalizePatient(record) ?? normalizePatient({ id, ...record });
   } catch (err) {
     // 404 can mean either "no such patient" or "route missing"; the list settles which
     if (!isMissingEndpoint(err)) throw err;

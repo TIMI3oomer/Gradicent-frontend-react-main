@@ -151,7 +151,7 @@ export function MedicalHome() {
     },
     { key: 'condition', header: 'Condition', sortable: true, render: v => (v ? String(v) : '—') },
     { key: 'doctor', header: 'Doctor', sortable: true, render: v => (v ? String(v) : '—') },
-    { key: 'date', header: 'Last Activity', sortable: true, render: v => formatDate(v as string, 'short') },
+    { key: 'date', header: 'Last Activity', sortable: true, render: v => formatDate(v as string) },
     { key: 'status', header: 'Status', render: v => <Badge status={v as Patient['status']} size="sm" withDot={v === 'Active'} /> },
   ];
 
@@ -181,7 +181,7 @@ export function MedicalHome() {
           <>
             <MedicalStatCard
               title="Total Patients" value={patients.length}
-              trend={newThisMonth > 0 ? 'up' : 'neutral'} trendValue={`+${newThisMonth} this month`}
+              trend={newThisMonth > 0 ? 'up' : 'neutral'} trendValue={newThisMonth > 0 ? `+${newThisMonth} this month` : 'No new patients this month'}
               icon={<Users size={18} />} index={0}
             />
             <MedicalStatCard
@@ -199,7 +199,7 @@ export function MedicalHome() {
               icon={<Calendar size={18} />} index={2}
             />
             <MedicalStatCard
-              title="Finalized Today" value={finalizedToday}
+              title="Locked Today" value={finalizedToday}
               trend="neutral" trendValue={`of ${bookedToday.length} booked`}
               icon={<CheckCircle2 size={18} />} index={3}
             />
@@ -241,7 +241,7 @@ export function MedicalHome() {
             )}
             {bookedToday.slice(0, 8).map((slot, i) => {
               const label = slot.name || 'Unnamed patient';
-              const status = slot.locked ? 'Completed' : 'Scheduled';
+              const status = slot.locked ? 'Locked' : 'Open';
               return (
                 <motion.div
                   key={slot.no}
@@ -337,9 +337,11 @@ export function MedicalHome() {
         </div>
       )}
 
-      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-        Showing {sortedRecent.length} of {patients.length} patients. Last updated {formatRelativeTime(loadedAt)}.
-      </div>
+      {!patientsError && (
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          Showing {sortedRecent.length} of {patients.length} patients. Last updated {formatRelativeTime(loadedAt)}.
+        </div>
+      )}
     </MedicalLayout>
   );
 }

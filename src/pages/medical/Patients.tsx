@@ -104,7 +104,7 @@ export function Patients() {
     { key: 'age', header: 'Age', sortable: true, width: '60px', render: v => (v === null || v === undefined ? '—' : String(v)) },
     { key: 'primaryCondition', header: 'Condition', sortable: true, render: v => (v ? String(v) : '—') },
     { key: 'doctor', header: 'Doctor', sortable: true, render: v => (v ? String(v) : '—') },
-    { key: 'lastVisit', header: 'Last Visit', sortable: true, render: v => formatDate(v as string | null, 'short') },
+    { key: 'lastVisit', header: 'Last Visit', sortable: true, render: v => formatDate(v as string | null) },
     { key: 'status', header: 'Status', render: v => <Badge status={v as Patient['status']} size="sm" withDot={v === 'Active'} /> },
     {
       key: 'id', header: '', width: '100px', align: 'right',

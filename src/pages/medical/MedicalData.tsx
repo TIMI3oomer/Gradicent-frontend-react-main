@@ -37,12 +37,12 @@ const patientCols: Column<Row>[] = [
   { key: 'condition', header: 'Condition', sortable: true, render: text },
   { key: 'doctor', header: 'Doctor', sortable: true, render: text },
   { key: 'phone', header: 'Phone', render: text },
-  { key: 'registered', header: 'Registered', sortable: true, render: v => formatDate(v as string | null, 'short') },
+  { key: 'registered', header: 'Registered', sortable: true, render: v => formatDate(v as string | null) },
   { key: 'status', header: 'Status', render: v => <Badge status={v as 'Active'} size="sm" /> },
 ];
 
 const visitCols: Column<Row>[] = [
-  { key: 'date', header: 'Date', sortable: true, render: v => formatDate(v as string | null, 'short') },
+  { key: 'date', header: 'Date', sortable: true, render: v => formatDate(v as string | null) },
   { key: 'slot', header: 'Slot', sortable: true, width: '80px', render: v => <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11 }}>{text(v)}</span> },
   { key: 'patient', header: 'Patient', sortable: true, render: v => <span style={{ fontWeight: 600 }}>{text(v)}</span> },
   { key: 'phone', header: 'Phone', render: text },
@@ -121,7 +121,7 @@ async function loadVisitRows(userId: string | number): Promise<{ rows: Row[]; fa
         patient: slot.name,
         phone: slot.phone,
         notes: slot.msg,
-        status: slot.locked ? 'Completed' : 'Scheduled',
+        status: slot.locked ? 'Locked' : 'Open',
       }));
   });
   if (failedDays === dates.length) throw firstError ?? new Error('Could not load appointments.');

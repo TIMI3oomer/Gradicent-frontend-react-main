@@ -179,7 +179,7 @@ export function Clients() {
       ) : error ? null : filtered.length === 0 ? (
         <EmptyState
           icon={<Users size={32} />}
-          title="No Clients Found"
+          title="No clients found"
           description={search || planFilter !== 'All' ? 'No clients match your search or filters.' : 'Add your first client to get started.'}
         />
       ) : (

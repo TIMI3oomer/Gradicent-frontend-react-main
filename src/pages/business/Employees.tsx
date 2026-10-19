@@ -176,7 +176,7 @@ export function Employees() {
       ) : error ? null : filtered.length === 0 ? (
         <EmptyState
           icon={<UserCheck size={36} />}
-          title="No Employees Found"
+          title="No employees found"
           description={search || dept !== 'All' ? 'No employees match your search or filters.' : 'Employees you add will appear here.'}
         />
       ) : (

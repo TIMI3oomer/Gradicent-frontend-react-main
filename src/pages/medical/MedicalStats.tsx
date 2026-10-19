@@ -137,11 +137,13 @@ export function MedicalStats() {
           trend="neutral" trendValue={patients.length ? `${Math.round((activeCount / patients.length) * 100)}% of all patients` : 'No patients yet'}
           icon={<Activity size={18} />} index={2}
         />
-        <MedicalStatCard
-          title="Average Age" value={avgAge} unit={ages.length ? ' yrs' : undefined}
-          trend="neutral" trendValue={ages.length ? `from ${ages.length} patients with a date of birth` : 'No ages on file'}
-          icon={<Cake size={18} />} index={3}
-        />
+        {ages.length > 0 && (
+          <MedicalStatCard
+            title="Average Age" value={avgAge} unit=" yrs"
+            trend="neutral" trendValue={`from ${ages.length} patients with a date of birth`}
+            icon={<Cake size={18} />} index={3}
+          />
+        )}
       </div>
 
       {/* Charts row 1 */}
@@ -218,7 +220,7 @@ export function MedicalStats() {
                 >
                   {genders.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
                 </Pie>
-                <Tooltip formatter={(v: number, name: string) => [v, name]} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                <Tooltip formatter={(v: number, name: string) => [v, name]} contentStyle={{ borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
@@ -236,7 +238,7 @@ export function MedicalStats() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
                 <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="condition" tick={{ fontSize: 11, fill: 'var(--text)' }} axisLine={false} tickLine={false} width={110} />
-                <Tooltip formatter={(v: number) => [v, 'Patients']} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                <Tooltip formatter={(v: number) => [v, 'Patients']} contentStyle={{ borderRadius: 8, border: '1px solid var(--border)', background: 'var(--surface)', fontSize: 12 }} />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                   {topConditions.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
                 </Bar>

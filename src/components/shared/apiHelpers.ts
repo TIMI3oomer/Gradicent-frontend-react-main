@@ -34,14 +34,39 @@ export function toRecord<T = Record<string, unknown>>(res: unknown): T | null {
   return res as T;
 }
 
+/**
+ * Turns raw fetch/back-end failures (stack-ish server text, "Failed to fetch", HTTP codes) into
+ * something a user can act on. Plain validation messages from the API pass through unchanged.
+ */
+export function friendlyError(message: string): string {
+  const text = message.trim();
+  if (/network error|failed to fetch|networkerror|load failed/i.test(text)) {
+    return "We couldn't reach the server. Check your internet connection and try again.";
+  }
+  if (/timed out|timeout/i.test(text)) return 'The server took too long to respond. Please try again.';
+  if (/\bHTTP 401\b|unauthenticated|unauthori[sz]ed/i.test(text)) return SIGNED_OUT_MESSAGE;
+  if (/\bHTTP 403\b|forbidden/i.test(text)) return "You don't have permission to do that.";
+  if (/\bHTTP (404|405)\b/.test(text)) return "This feature isn't available yet.";
+  if (/errno|traceback|error performing|server error|function_invocation|\bHTTP 5\d\d\b|server returned (html|non-json)/i.test(text)) {
+    return 'Something went wrong on our side. Please try again in a moment.';
+  }
+  // e.g. "400 Bad Request: Missing 'query'" → "Missing 'query'"
+  return text.replace(/^\d{3}\s+[A-Za-z ]+:\s*/, '');
+}
+
 export function errorMessage(err: unknown, fallback: string): string {
-  if (err instanceof Error && err.message.trim()) return err.message;
-  if (typeof err === 'string' && err.trim()) return err;
+  const status = (err as { status?: unknown } | null)?.status;
+  if (typeof status === 'number' && status >= 500) return friendlyError('HTTP 500');
+  if (status === 401) return SIGNED_OUT_MESSAGE;
+  if (err instanceof Error && err.message.trim()) return friendlyError(err.message);
+  if (typeof err === 'string' && err.trim()) return friendlyError(err);
   return fallback;
 }
 
 /** True when the backend answered 404/405, i.e. the route has not been implemented yet. */
 export function isMissingEndpoint(err: unknown): boolean {
+  const status = (err as { status?: unknown } | null)?.status;
+  if (status === 404 || status === 405) return true;
   const message = err instanceof Error ? err.message : String(err ?? '');
   return /\bHTTP (404|405)\b/.test(message) || /\b(404|405)\b.*(Not Found|Method Not Allowed)/i.test(message);
 }

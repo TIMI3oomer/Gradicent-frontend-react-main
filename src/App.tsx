@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
 import { queryClient } from './lib/queryClient';
-import { MEDICAL_ROUTES, BUSINESS_ROUTES } from './lib/constants';
+import { APP_NAME, MEDICAL_ROUTES, BUSINESS_ROUTES } from './lib/constants';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
@@ -70,6 +70,56 @@ function ScrollManager() {
     }, 50);
     return () => window.clearInterval(timer);
   }, [pathname, hash]);
+
+  return null;
+}
+
+// ─── Per-page browser tab titles ──────────────────────────────────────────────
+
+const PAGE_TITLES: [RegExp, string][] = [
+  [/^\/$/, ''],
+  [/^\/login/, 'Sign in'],
+  [/^\/products/, 'Pricing'],
+  [/^\/medical-landing/, 'Medical'],
+  [/^\/privacy/, 'Privacy Policy'],
+  [/^\/terms/, 'Terms of Service'],
+  [/^\/medical\/home/, 'Medical Dashboard'],
+  [/^\/medical\/patients\/add/, 'Add Patient'],
+  [/^\/medical\/patients\/[^/]+/, 'Patient'],
+  [/^\/medical\/patients/, 'Patients'],
+  [/^\/medical\/appointments/, 'Appointments'],
+  [/^\/medical\/stats/, 'Analytics'],
+  [/^\/medical\/data/, 'Data'],
+  [/^\/medical\/notifications/, 'Notifications'],
+  [/^\/medical\/settings/, 'Settings'],
+  [/^\/medical\/support/, 'Support'],
+  [/^\/medical\/account/, 'Account'],
+  [/^\/business\/home/, 'Business Dashboard'],
+  [/^\/business\/clients\/add/, 'Add Client'],
+  [/^\/business\/clients\/[^/]+/, 'Client'],
+  [/^\/business\/clients/, 'Clients'],
+  [/^\/business\/employees\/[^/]+/, 'Employee'],
+  [/^\/business\/employees/, 'Employees'],
+  [/^\/business\/transactions/, 'Transactions'],
+  [/^\/business\/products/, 'Products'],
+  [/^\/business\/services/, 'Services'],
+  [/^\/business\/appointments/, 'Appointments'],
+  [/^\/business\/stats/, 'Analytics'],
+  [/^\/business\/data/, 'Data'],
+  [/^\/business\/notifications/, 'Notifications'],
+  [/^\/business\/settings/, 'Settings'],
+  [/^\/business\/account/, 'Account'],
+  [/^\/business\/plan/, 'Plan'],
+];
+
+function DocumentTitle() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const match = PAGE_TITLES.find(([pattern]) => pattern.test(pathname));
+    const page = match ? match[1] : 'Page Not Found';
+    document.title = page ? `${page} · ${APP_NAME}` : APP_NAME;
+  }, [pathname]);
 
   return null;
 }
@@ -145,6 +195,7 @@ export default function App() {
         <AuthProvider>
           <ThemeProvider>
             <ScrollManager />
+            <DocumentTitle />
             <AnimatedRoutes />
           </ThemeProvider>
         </AuthProvider>

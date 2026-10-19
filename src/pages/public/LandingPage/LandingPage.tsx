@@ -192,17 +192,19 @@ export function LandingPage() {
         </div>
 
         {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: [0, 8, 0] }}
-          transition={{ delay: 1.2, duration: 1.5, repeat: Infinity }}
-          className="landing-scroll-hint"
+        <div
           onClick={() => document.getElementById('stats')?.scrollIntoView({ behavior: 'smooth' })}
-          style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}
+          style={{ position: 'absolute', bottom: 32, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', zIndex: 1 }}
           aria-hidden="true"
         >
-          <ArrowDown size={20} />
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: [0, 8, 0] }}
+            transition={{ delay: 1.2, duration: 1.5, repeat: Infinity }}
+          >
+            <ArrowDown size={20} />
+          </motion.div>
+        </div>
       </section>
 
       {/* ===== STATS BAR ===== */}

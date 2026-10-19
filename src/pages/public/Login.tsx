@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams, Link, Navigate } from 'react
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ChevronRight, Loader2, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { errorMessage } from '../../components/shared/apiHelpers';
 
 type Domain = 'medical' | 'business';
 
@@ -81,7 +82,10 @@ export function Login() {
       navigate(destinationFor(selectedDomain), { replace: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : '';
-      setError(message && message !== 'Authentication failed' ? message : 'Invalid email or password. Please try again.');
+      // Wrong credentials come back as a generic failure; anything else (network, server) gets a readable message
+      setError(!message || message === 'Authentication failed' || /invalid|incorrect|credentials|password/i.test(message)
+        ? 'Invalid email or password. Please try again.'
+        : errorMessage(err, 'Sign in failed. Please try again.'));
     } finally {
       setLoading(false);
     }

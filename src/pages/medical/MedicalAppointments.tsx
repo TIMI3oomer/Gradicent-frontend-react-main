@@ -5,6 +5,7 @@ import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
 import { Badge } from '../../components/shared/Badge';
 import { formatDate, parseDate, toLocalIsoDate } from '../../lib/formatters';
 import { useAuth } from '../../context/AuthContext';
+import { errorMessage } from '../../components/shared/apiHelpers';
 import {
   getAppointmentsForDate,
   lockAppointment,
@@ -81,7 +82,7 @@ export function MedicalAppointments() {
       } catch (error) {
         if (!cancelled) {
           setAppointments([]);
-          setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to load appointments' });
+          setStatus({ type: 'error', message: errorMessage(error, 'Failed to load appointments') });
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -161,7 +162,7 @@ export function MedicalAppointments() {
       await saveAppointments(dateIso, appointments, DOMAIN, currentUserId);
       setStatus({ type: 'success', message: 'Appointments saved' });
     } catch (error) {
-      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to save appointments' });
+      setStatus({ type: 'error', message: errorMessage(error, 'Failed to save appointments') });
     } finally {
       setSaving(false);
     }
@@ -174,7 +175,7 @@ export function MedicalAppointments() {
       setAppointments((current) => current.map((item) => (String(item.no) === String(slot.no) ? { ...item, locked: true } : item)));
       setStatus({ type: 'success', message: `Appointment ${slot.no} locked` });
     } catch (error) {
-      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Failed to lock appointment' });
+      setStatus({ type: 'error', message: errorMessage(error, 'Failed to lock appointment') });
     }
   };
 
