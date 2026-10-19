@@ -98,9 +98,9 @@ export function Login() {
   return (
     <div className="login-shell" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
       <div className="login-brand-panel" style={{ background: '#1B427A', color: 'white' }}>
-        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, color: 'white', marginBottom: 40 }} aria-label="Gradicent home">
-          <span style={{ width: 36, height: 36, background: '#FFAF0F', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, color: '#1B427A', fontFamily: 'Syne, sans-serif' }}>G</span>
-          <span style={{ fontSize: 18, fontWeight: 700, fontFamily: 'Syne, sans-serif' }}>Gradicent</span>
+        <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, color: 'white', marginBottom: 40 }} aria-label="Binder Software home">
+          <span style={{ width: 36, height: 36, background: '#FFAF0F', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 15, color: '#1B427A', fontFamily: 'Syne, sans-serif' }}>B</span>
+          <span style={{ fontSize: 18, fontWeight: 700, fontFamily: 'Syne, sans-serif' }}>Binder Software</span>
         </Link>
         <h2 style={{ fontFamily: 'Fraunces, Georgia, serif', fontSize: 'clamp(26px, 3vw, 36px)', fontWeight: 700, lineHeight: 1.2, marginBottom: 14 }}>
           One login for your clinic and your business.

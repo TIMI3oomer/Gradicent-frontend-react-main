@@ -1,4 +1,4 @@
-// Gradicent Shared Types
+// Binder Software Shared Types
 
 export interface Patient {
   id: string;

@@ -40,7 +40,7 @@ const features = [
 
 const testimonials = [
   {
-    quote: 'Gradicent transformed how we manage our clinic. Patient satisfaction scores up 18% since switching.',
+    quote: 'Binder Software transformed how we manage our clinic. Patient satisfaction scores up 18% since switching.',
     name: 'Dr. Sarah Chen', role: 'Medical Director, Pacific Health Clinic',
   },
   {
@@ -160,7 +160,7 @@ export function LandingPage() {
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28c840' }} />
               <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 4, height: 18, marginLeft: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 10, color: '#5A7090' }}>app.gradicent.io/business</span>
+                <span style={{ fontSize: 10, color: '#5A7090' }}>app.bindersoftware.com/business</span>
               </div>
             </div>
             {/* Fake dashboard */}

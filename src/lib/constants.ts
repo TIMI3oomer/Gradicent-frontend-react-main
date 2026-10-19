@@ -1,5 +1,5 @@
-export const APP_NAME = 'Gradicent';
-export const DEV_TOKEN = 'dev-token-gradicent-2024';
+export const APP_NAME = 'Binder Software';
+export const DEV_TOKEN = 'dev-token-binder-software';
 export const DEV_MODE = import.meta.env.VITE_USE_MOCK_DATA === 'true';
 
 export const MEDICAL_ROUTES = {

@@ -45,7 +45,7 @@ export const mockNotifications: Notification[] = [
   },
   {
     id: 'NOT-008', type: 'info', domain: 'system', title: 'System Update Available',
-    message: 'Gradicent v2.5 is available. New features: Enhanced reporting, dark mode improvements.',
+    message: 'Binder Software v2.5 is available. New features: Enhanced reporting, dark mode improvements.',
     read: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     link: null,
   },

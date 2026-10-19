@@ -133,7 +133,7 @@ export function Products() {
         <h2 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 800, color: 'var(--navy)', marginBottom: 12 }}>Need a custom solution?</h2>
         <p style={{ color: '#6b7280', marginBottom: 24, fontSize: 16 }}>Contact our sales team for enterprise pricing and custom arrangements.</p>
         <a
-          href="mailto:sales@gradicent.io?subject=Custom%20solution%20inquiry"
+          href="mailto:khaafif@gmail.com?subject=Custom%20solution%20inquiry"
           style={{ display: 'inline-block', padding: '14px 32px', background: 'var(--navy)', color: 'white', borderRadius: 8, fontWeight: 700, fontSize: 16 }}
         >
           Contact Sales

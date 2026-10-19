@@ -30,9 +30,9 @@ export function MedicalSidebar({ id, open = false, onNavigate }: MedicalSidebarP
   return (
     <nav id={id} className={`medical-sidebar${open ? ' is-open' : ''}`} aria-label="Medical navigation">
       <div className="medical-sidebar-logo">
-        <div className="sidebar-logo-mark">G</div>
+        <div className="sidebar-logo-mark">B</div>
         <div>
-          <span className="sidebar-logo-name">Gradicent</span>
+          <span className="sidebar-logo-name">Binder Software</span>
           <span className="sidebar-logo-sub">Medical</span>
         </div>
       </div>

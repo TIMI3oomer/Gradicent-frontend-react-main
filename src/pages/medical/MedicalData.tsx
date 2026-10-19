@@ -52,7 +52,7 @@ function downloadCsv(rows: DataRow[]) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `gradicent-medical-visits-${toLocalIsoDate()}.csv`;
+  link.download = `binder-software-medical-visits-${toLocalIsoDate()}.csv`;
   document.body.appendChild(link);
   link.click();
   link.remove();

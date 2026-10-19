@@ -26,15 +26,15 @@ export function Privacy() {
           },
           {
             title: '5. HIPAA Compliance',
-            body: 'For our medical customers, Gradicent is fully HIPAA compliant. We maintain Business Associate Agreements (BAAs) with all applicable customers and ensure all Protected Health Information (PHI) is handled in accordance with HIPAA regulations.',
+            body: 'For our medical customers, Binder Software is fully HIPAA compliant. We maintain Business Associate Agreements (BAAs) with all applicable customers and ensure all Protected Health Information (PHI) is handled in accordance with HIPAA regulations.',
           },
           {
             title: '6. Your Rights',
-            body: 'You have the right to access, update, or delete your personal information. You may also opt out of marketing communications at any time. To exercise these rights, please contact us at privacy@gradicent.io.',
+            body: 'You have the right to access, update, or delete your personal information. You may also opt out of marketing communications at any time. To exercise these rights, please contact us at khaafif@gmail.com.',
           },
           {
             title: '7. Contact Us',
-            body: 'If you have questions about this Privacy Policy, please contact us at privacy@gradicent.io or write to us at Gradicent Inc., 100 Market Street, Suite 300, San Francisco, CA 94105.',
+            body: 'If you have questions about this Privacy Policy, please contact us at khaafif@gmail.com.',
           },
         ].map(section => (
           <div key={section.title} style={{ marginBottom: 32 }}>

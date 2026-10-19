@@ -2,19 +2,19 @@ import type { Product } from '../types';
 
 export const mockProducts: Product[] = [
   {
-    id: 'PRD-001', name: 'Gradicent Business Pro', description: 'Full-featured business operations platform',
+    id: 'PRD-001', name: 'Binder Software Business Pro', description: 'Full-featured business operations platform',
     category: 'Subscription', price: 899, unit: 'per month', status: 'Active', sku: 'GRD-BIZ-PRO',
     inventory: null, tags: ['SaaS', 'Core Product'],
     createdAt: '2021-01-01', updatedAt: '2024-10-01',
   },
   {
-    id: 'PRD-002', name: 'Gradicent Business Enterprise', description: 'Enterprise tier with SLA and custom CSM',
+    id: 'PRD-002', name: 'Binder Software Business Enterprise', description: 'Enterprise tier with SLA and custom CSM',
     category: 'Subscription', price: 2800, unit: 'per month', status: 'Active', sku: 'GRD-BIZ-ENT',
     inventory: null, tags: ['SaaS', 'Enterprise', 'Core Product'],
     createdAt: '2021-01-01', updatedAt: '2024-10-01',
   },
   {
-    id: 'PRD-003', name: 'Gradicent Business Basic', description: 'Entry-level plan for small teams',
+    id: 'PRD-003', name: 'Binder Software Business Basic', description: 'Entry-level plan for small teams',
     category: 'Subscription', price: 249, unit: 'per month', status: 'Active', sku: 'GRD-BIZ-BSC',
     inventory: null, tags: ['SaaS', 'Core Product', 'SMB'],
     createdAt: '2021-01-01', updatedAt: '2024-10-01',

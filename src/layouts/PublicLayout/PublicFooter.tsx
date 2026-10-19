@@ -6,8 +6,8 @@ export function PublicFooter() {
       <div className="footer-grid">
         <div className="footer-brand-col">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <div style={{ width: 32, height: 32, background: '#FFAF0F', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#1B427A', fontFamily: 'Syne' }}>G</div>
-            <span style={{ fontSize: 18, fontWeight: 700, color: 'white', fontFamily: 'Syne, sans-serif' }}>Gradicent</span>
+            <div style={{ width: 32, height: 32, background: '#FFAF0F', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#1B427A', fontFamily: 'Syne' }}>B</div>
+            <span style={{ fontSize: 18, fontWeight: 700, color: 'white', fontFamily: 'Syne, sans-serif' }}>Binder Software</span>
           </div>
           <p className="footer-brand-desc">
             The dual-domain platform for medical teams and business operations. Everything you need, in one place.
@@ -42,7 +42,7 @@ export function PublicFooter() {
       </div>
 
       <div className="footer-bar">
-        <span>© {new Date().getFullYear()} Gradicent, Inc. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} Binder Software. All rights reserved.</span>
         <div className="footer-bar-links">
           <Link to="/privacy" className="footer-bar-link">Privacy</Link>
           <Link to="/terms" className="footer-bar-link">Terms</Link>

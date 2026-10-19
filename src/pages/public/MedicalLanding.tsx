@@ -13,7 +13,7 @@ const features = [
 
 const testimonials = [
   {
-    quote: 'Gradicent Medical transformed our clinic. Patient wait times dropped by 40% and our staff can focus on care instead of paperwork.',
+    quote: 'Binder Software transformed our clinic. Patient wait times dropped by 40% and our staff can focus on care instead of paperwork.',
     name: 'Dr. Rebecca Torres',
     role: 'Chief Medical Officer, Northside Health System',
   },
@@ -23,7 +23,7 @@ const testimonials = [
     role: 'Medical Director, Pacific Family Practice',
   },
   {
-    quote: 'Switching from our old system was seamless. Gradicent\'s onboarding team had us fully operational in less than two weeks.',
+    quote: 'Switching from our old system was seamless. Binder Software\'s onboarding team had us fully operational in less than two weeks.',
     name: 'Sarah Nguyen',
     role: 'Practice Manager, Riverside Clinic Group',
   },
@@ -44,7 +44,7 @@ export function MedicalLanding() {
           <span style={{ color: '#CE7A35' }}>Built for Clinicians</span>
         </h1>
         <p style={{ fontSize: 18, opacity: 0.75, maxWidth: 560, margin: '0 auto 40px', lineHeight: 1.7 }}>
-          Gradicent Medical gives healthcare teams the tools to manage patients, streamline workflows, and improve outcomes — all in one secure platform.
+          Binder Software gives healthcare teams the tools to manage patients, streamline workflows, and improve outcomes — all in one secure platform.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button

@@ -63,9 +63,9 @@ export function BusinessSidebar({ open = false, onClose }: BusinessSidebarProps)
   return (
     <nav id="biz-sidebar" className={`business-sidebar${open ? ' open' : ''}`} aria-label="Business navigation">
       <div className="business-sidebar-logo">
-        <div className="biz-logo-mark">G</div>
+        <div className="biz-logo-mark">B</div>
         <div>
-          <span className="biz-logo-name">Gradicent</span>
+          <span className="biz-logo-name">Binder Software</span>
           <span className="biz-logo-sub">Business</span>
         </div>
         <button

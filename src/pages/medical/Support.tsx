@@ -2,7 +2,7 @@ import { type ReactNode } from 'react';
 import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
 import { MessageCircle, Book, Mail } from 'lucide-react';
 
-const SUPPORT_EMAIL = 'support@gradicent.io';
+const SUPPORT_EMAIL = 'khaafif@gmail.com';
 
 type SupportChannel = {
   icon: ReactNode;
@@ -22,14 +22,14 @@ const channels: SupportChannel[] = [
     desc: `Email ${SUPPORT_EMAIL} and we'll get back to you within 24h.`,
     action: 'Send Email',
     color: '#4CAF7D',
-    href: `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Gradicent Medical support request')}`,
+    href: `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Binder Software Medical support request')}`,
   },
 ];
 
 const faqs = [
   { q: 'How do I add a new patient?', a: 'Go to Patients and click the "Add Patient" button in the top bar, then complete the three-step form.' },
   { q: 'Can I export patient data?', a: 'Yes. Open Data Explorer, optionally search to narrow the records, then click "Export CSV" to download the matching visits.' },
-  { q: 'How is patient data secured?', a: 'All data is encrypted at rest and in transit. Gradicent is HIPAA compliant.' },
+  { q: 'How is patient data secured?', a: 'All data is encrypted at rest and in transit. Binder Software is HIPAA compliant.' },
   { q: 'How do I manage appointments?', a: 'Open Appointments, pick a date, edit the name, phone or message on any open slot, then click "Save changes". Lock a slot to make it read-only.' },
 ];
 

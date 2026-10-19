@@ -3,7 +3,7 @@ import type { Employee } from '../types';
 export const mockEmployees: Employee[] = [
   {
     id: 'EMP-001', name: 'Jordan Blake', role: 'Senior Account Executive', department: 'Sales',
-    email: 'jordan.blake@gradicent.io', phone: '(415) 111-2222', hireDate: '2020-03-15',
+    email: 'jordan.blake@bindersoftware.com', phone: '(415) 111-2222', hireDate: '2020-03-15',
     salary: 95000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-001',
     manager: null, location: 'San Francisco, CA', bio: 'Top performer with 5 years in B2B SaaS sales.',
     skills: ['Negotiation', 'CRM', 'Consultative Selling', 'Presentation'],
@@ -11,7 +11,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-002', name: 'Priya Sharma', role: 'Customer Success Manager', department: 'Customer Success',
-    email: 'priya.sharma@gradicent.io', phone: '(415) 222-3333', hireDate: '2021-07-01',
+    email: 'priya.sharma@bindersoftware.com', phone: '(415) 222-3333', hireDate: '2021-07-01',
     salary: 82000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-002',
     manager: 'EMP-001', location: 'Remote', bio: 'Passionate about client outcomes and long-term partnerships.',
     skills: ['Onboarding', 'Retention', 'Upselling', 'Communication'],
@@ -19,7 +19,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-003', name: 'Marcus Webb', role: 'Enterprise Solutions Architect', department: 'Solutions Engineering',
-    email: 'marcus.webb@gradicent.io', phone: '(415) 333-4444', hireDate: '2019-11-12',
+    email: 'marcus.webb@bindersoftware.com', phone: '(415) 333-4444', hireDate: '2019-11-12',
     salary: 128000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-003',
     manager: null, location: 'New York, NY', bio: 'Technical expert bridging sales and product.',
     skills: ['API Integration', 'Solution Design', 'Pre-sales', 'Technical Writing'],
@@ -27,7 +27,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-004', name: 'Lisa Nkomo', role: 'Account Manager', department: 'Sales',
-    email: 'lisa.nkomo@gradicent.io', phone: '(415) 444-5555', hireDate: '2022-02-28',
+    email: 'lisa.nkomo@bindersoftware.com', phone: '(415) 444-5555', hireDate: '2022-02-28',
     salary: 72000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-004',
     manager: 'EMP-001', location: 'Chicago, IL', bio: 'Specializes in mid-market and SMB accounts.',
     skills: ['Account Management', 'Renewal Strategy', 'Demos'],
@@ -35,7 +35,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-005', name: 'Thomas Reed', role: 'Finance Manager', department: 'Finance',
-    email: 'thomas.reed@gradicent.io', phone: '(415) 555-6666', hireDate: '2020-09-01',
+    email: 'thomas.reed@bindersoftware.com', phone: '(415) 555-6666', hireDate: '2020-09-01',
     salary: 105000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-005',
     manager: null, location: 'Boston, MA', bio: 'CPA with background in SaaS financial operations.',
     skills: ['Financial Modeling', 'Forecasting', 'QuickBooks', 'Compliance'],
@@ -43,7 +43,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-006', name: 'Anika Patel', role: 'Marketing Manager', department: 'Marketing',
-    email: 'anika.patel@gradicent.io', phone: '(415) 666-7777', hireDate: '2021-04-15',
+    email: 'anika.patel@bindersoftware.com', phone: '(415) 666-7777', hireDate: '2021-04-15',
     salary: 88000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-006',
     manager: null, location: 'Austin, TX', bio: 'Growth marketer with deep B2B SaaS expertise.',
     skills: ['Content Marketing', 'SEO', 'HubSpot', 'Campaign Management'],
@@ -51,7 +51,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-007', name: 'Carlos Rios', role: 'DevOps Engineer', department: 'Engineering',
-    email: 'carlos.rios@gradicent.io', phone: '(415) 777-8888', hireDate: '2020-06-01',
+    email: 'carlos.rios@bindersoftware.com', phone: '(415) 777-8888', hireDate: '2020-06-01',
     salary: 135000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-007',
     manager: null, location: 'Seattle, WA', bio: 'Infrastructure automation and reliability specialist.',
     skills: ['Kubernetes', 'AWS', 'Terraform', 'CI/CD', 'Python'],
@@ -59,7 +59,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-008', name: 'Yuki Tanaka', role: 'UX Designer', department: 'Product',
-    email: 'yuki.tanaka@gradicent.io', phone: '(415) 888-9999', hireDate: '2022-08-15',
+    email: 'yuki.tanaka@bindersoftware.com', phone: '(415) 888-9999', hireDate: '2022-08-15',
     salary: 98000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-008',
     manager: null, location: 'San Francisco, CA', bio: 'Designs with empathy and precision.',
     skills: ['Figma', 'User Research', 'Prototyping', 'Design Systems'],
@@ -67,7 +67,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-009', name: 'Damien Brooks', role: 'Support Lead', department: 'Support',
-    email: 'damien.brooks@gradicent.io', phone: '(415) 999-0000', hireDate: '2023-01-10',
+    email: 'damien.brooks@bindersoftware.com', phone: '(415) 999-0000', hireDate: '2023-01-10',
     salary: 65000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-009',
     manager: 'EMP-002', location: 'Remote', bio: 'CSAT champion with deep product knowledge.',
     skills: ['Zendesk', 'Technical Support', 'Escalation Management'],
@@ -75,7 +75,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-010', name: 'Elena Voronova', role: 'Data Analyst', department: 'Analytics',
-    email: 'elena.v@gradicent.io', phone: '(415) 100-2000', hireDate: '2021-10-25',
+    email: 'elena.v@bindersoftware.com', phone: '(415) 100-2000', hireDate: '2021-10-25',
     salary: 92000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-010',
     manager: 'EMP-005', location: 'New York, NY', bio: 'Translates data into actionable insights.',
     skills: ['SQL', 'Python', 'Tableau', 'Statistical Analysis'],
@@ -83,7 +83,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-011', name: 'Owen Fitzgerald', role: 'Sales Development Rep', department: 'Sales',
-    email: 'owen.fitz@gradicent.io', phone: '(415) 200-3000', hireDate: '2024-03-01',
+    email: 'owen.fitz@bindersoftware.com', phone: '(415) 200-3000', hireDate: '2024-03-01',
     salary: 55000, status: 'Active', avatar: 'https://i.pravatar.cc/150?u=EMP-011',
     manager: 'EMP-001', location: 'Chicago, IL', bio: 'Energetic BDR with strong pipeline generation skills.',
     skills: ['Cold Outreach', 'LinkedIn Sales Navigator', 'HubSpot'],
@@ -91,7 +91,7 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: 'EMP-012', name: 'Rachel Lowe', role: 'Content Strategist', department: 'Marketing',
-    email: 'rachel.lowe@gradicent.io', phone: '(415) 300-4000', hireDate: '2022-11-07',
+    email: 'rachel.lowe@bindersoftware.com', phone: '(415) 300-4000', hireDate: '2022-11-07',
     salary: 75000, status: 'On Leave', avatar: 'https://i.pravatar.cc/150?u=EMP-012',
     manager: 'EMP-006', location: 'Remote', bio: 'Storyteller specializing in SaaS thought leadership.',
     skills: ['Content Writing', 'SEO', 'Webinars', 'Social Media'],

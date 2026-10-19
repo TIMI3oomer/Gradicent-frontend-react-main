@@ -43,10 +43,10 @@ export function PublicNavbar() {
       <Link
         to="/"
         className={cn('nav-logo', isLightPage && !scrolled && 'light-logo')}
-        aria-label="Gradicent home"
+        aria-label="Binder Software home"
       >
-        <div className="nav-logo-mark">G</div>
-        <span className="nav-logo-name">Gradicent</span>
+        <div className="nav-logo-mark">B</div>
+        <span className="nav-logo-name">Binder Software</span>
       </Link>
 
       <div className="nav-menu" id="public-nav-menu">
