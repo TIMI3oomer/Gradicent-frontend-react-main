@@ -15,6 +15,8 @@ interface PatientCardProps {
 
 export function PatientCard({ patient, index = 0 }: PatientCardProps) {
   const navigate = useNavigate();
+  const profilePath = `/medical/patients/${encodeURIComponent(patient.id)}`;
+  const ageGender = [patient.age === null ? '' : `${patient.age}y`, patient.gender].filter(Boolean).join(' · ');
 
   return (
     <motion.div
@@ -22,7 +24,7 @@ export function PatientCard({ patient, index = 0 }: PatientCardProps) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.25 }}
-      onClick={() => navigate(`/medical/patients/${patient.id}`)}
+      onClick={() => navigate(profilePath)}
       style={{ cursor: 'pointer' }}
     >
       <div className="patient-card-header">
@@ -31,15 +33,15 @@ export function PatientCard({ patient, index = 0 }: PatientCardProps) {
         <Badge status={patient.status} size="sm" withDot={patient.status === 'Active'} />
       </div>
 
-      <h3 className="patient-card-name">{patient.name}</h3>
+      <h3 className="patient-card-name">{patient.name || '—'}</h3>
       <div className="patient-card-meta">
-        <span>{patient.age}y · {patient.gender}</span>
-        <Badge variant="info" size="sm">{patient.primaryCondition}</Badge>
+        <span>{ageGender || '—'}</span>
+        {patient.primaryCondition && <Badge variant="info" size="sm">{patient.primaryCondition}</Badge>}
       </div>
 
       <div className="patient-card-detail">
         <Stethoscope size={12} aria-hidden="true" />
-        <span>{patient.doctor}</span>
+        <span>{patient.doctor || 'No doctor assigned'}</span>
       </div>
 
       <div className="patient-card-detail">
@@ -58,14 +60,14 @@ export function PatientCard({ patient, index = 0 }: PatientCardProps) {
       <div className="patient-card-actions" onClick={e => e.stopPropagation()}>
         <button
           className="patient-action-btn"
-          aria-label={`View ${patient.name}'s profile`}
-          onClick={() => navigate(`/medical/patients/${patient.id}`)}
+          aria-label={`View ${patient.name || 'patient'}'s profile`}
+          onClick={() => navigate(profilePath)}
         >
           View Profile
         </button>
         <button
           className="patient-action-icon-btn"
-          aria-label={`Add note for ${patient.name} (coming soon)`}
+          aria-label={`Add note for ${patient.name || 'patient'} (coming soon)`}
           title="Coming soon"
           disabled
         >
@@ -73,7 +75,7 @@ export function PatientCard({ patient, index = 0 }: PatientCardProps) {
         </button>
         <button
           className="patient-action-icon-btn"
-          aria-label={`Schedule appointment for ${patient.name}`}
+          aria-label={`Schedule appointment for ${patient.name || 'patient'}`}
           title="Schedule"
           onClick={() => navigate('/medical/appointments')}
         >

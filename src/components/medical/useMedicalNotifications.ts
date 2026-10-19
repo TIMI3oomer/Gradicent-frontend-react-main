@@ -5,7 +5,8 @@ import type { Notification } from '../../types';
 /**
  * Single source of truth for which notifications the medical workspace shows,
  * so the top-bar badge and the Notifications page always count the same items.
- * Read state is local to this browser (mock data source).
+ * Read state is local to this browser (mock data source): the binder has no notifications
+ * route yet (/api/binder/notifications and similar all return 404), so this stays bundled until one exists.
  */
 const MEDICAL_DOMAINS: ReadonlyArray<Notification['domain']> = ['medical', 'system'];
 const STORAGE_KEY = 'gradicent_medical_read_notifications';

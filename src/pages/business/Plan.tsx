@@ -1,5 +1,5 @@
 import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
-import { UnavailableNotice } from '../../components/business/PageStatus';
+import { UnavailableNotice } from '../../components/shared/PageStatus';
 import { useAuth } from '../../context/AuthContext';
 import { Check, Receipt } from 'lucide-react';
 

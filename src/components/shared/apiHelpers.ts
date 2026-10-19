@@ -1,4 +1,4 @@
-// Small helpers shared by the business pages for unpacking binder API responses.
+// Small helpers shared by the business and medical pages for unpacking binder API responses.
 
 export const SIGNED_OUT_MESSAGE = 'We could not confirm your session. Please sign in again.';
 

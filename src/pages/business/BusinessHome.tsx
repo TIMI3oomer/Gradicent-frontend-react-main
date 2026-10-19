@@ -5,8 +5,8 @@ import { DollarSign, Users, TrendingDown, ChartBar as BarChart3 } from 'lucide-r
 import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
 import { KPIGrid } from '../../components/business/KPIGrid';
 import { RevenueChart } from '../../components/business/RevenueChart';
-import { ErrorBanner, LoadingState } from '../../components/business/PageStatus';
-import { SIGNED_OUT_MESSAGE, errorMessage, isMissingEndpoint, toArray, toNumber, toRecord } from '../../components/business/apiHelpers';
+import { ErrorBanner, LoadingState } from '../../components/shared/PageStatus';
+import { SIGNED_OUT_MESSAGE, errorMessage, isMissingEndpoint, toArray, toNumber, toRecord } from '../../components/shared/apiHelpers';
 import { countTrend, metricNumber, percentChangeTrend, pointChangeTrend } from '../../components/business/kpi';
 import { Badge, type BadgeVariant } from '../../components/shared/Badge';
 import { PlanBadge } from '../../components/business/PlanBadge';

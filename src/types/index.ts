@@ -4,8 +4,9 @@ export interface Patient {
   id: string;
   name: string;
   dob: string;
-  age: number;
-  gender: 'M' | 'F' | 'Other';
+  /** null when neither an age nor a valid date of birth is on file */
+  age: number | null;
+  gender: 'M' | 'F' | 'Other' | '';
   email: string;
   phone: string;
   address: string;
@@ -13,14 +14,15 @@ export interface Patient {
   secondaryConditions: string[];
   allergies: string[];
   medications: string[];
-  lastVisit: string;
+  medicalHistory?: string;
+  lastVisit: string | null;
   nextAppointment: string | null;
   status: 'Active' | 'Discharged' | 'Pending';
   doctor: string;
   notes: string;
   insuranceProvider: string;
   policyNumber: string;
-  totalVisits: number;
+  totalVisits: number | null;
   emergencyContact: { name: string; phone: string; relation: string };
   createdAt: string;
 }
