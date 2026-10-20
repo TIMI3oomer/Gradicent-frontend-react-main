@@ -105,7 +105,10 @@ export function BusinessStats() {
       title: 'Churn Rate', value: metricNumber(stats.churnRate), unit: '%', decimals: 1,
       ...pointChangeTrend(stats.churnRate, stats.previousChurnRate, 'vs last month'), icon: <TrendingDown size={18} />,
     },
-    { title: 'ROI', value: metricNumber(stats.roi), unit: '%', ...percentChangeTrend(stats.roi, stats.previousRoi, 'vs last quarter'), icon: <Briefcase size={18} /> },
+    // Only show ROI when the API can actually compute it
+    ...(stats.roi != null
+      ? [{ title: 'ROI', value: metricNumber(stats.roi), unit: '%', ...percentChangeTrend(stats.roi, stats.previousRoi, 'vs last quarter'), icon: <Briefcase size={18} /> }]
+      : []),
   ];
 
   const revenueByMonth = asArray<BusinessStatsData['revenueByMonth'][number]>(stats.revenueByMonth);

@@ -113,10 +113,13 @@ export function BusinessHome() {
       title: 'Churn Rate', value: metricNumber(stats.churnRate), unit: '%', decimals: 1,
       ...pointChangeTrend(stats.churnRate, stats.previousChurnRate, 'vs last month'), icon: <TrendingDown size={18} />,
     },
-    {
-      title: 'ROI', value: metricNumber(stats.roi), unit: '%',
-      ...percentChangeTrend(stats.roi, stats.previousRoi, 'vs last quarter'), icon: <BarChart3 size={18} />,
-    },
+    // ROI needs cost data the API may not have yet; show year-to-date revenue instead of a fake 0%
+    stats.roi != null
+      ? {
+        title: 'ROI', value: metricNumber(stats.roi), unit: '%',
+        ...percentChangeTrend(stats.roi, stats.previousRoi, 'vs last quarter'), icon: <BarChart3 size={18} />,
+      }
+      : { title: 'Revenue YTD', value: metricNumber(stats.totalRevenueYTD), prefix: '$', icon: <BarChart3 size={18} /> },
   ] : [];
 
   const clientColumns: Column<ClientRow>[] = [

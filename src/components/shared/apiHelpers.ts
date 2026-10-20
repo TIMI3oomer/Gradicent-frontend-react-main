@@ -46,6 +46,10 @@ export function friendlyError(message: string): string {
   if (/timed out|timeout/i.test(text)) return 'The server took too long to respond. Please try again.';
   if (/\bHTTP 401\b|unauthenticated|unauthori[sz]ed/i.test(text)) return SIGNED_OUT_MESSAGE;
   if (/\bHTTP 403\b|forbidden/i.test(text)) return "You don't have permission to do that.";
+  // Accounts created before both workspaces were provisioned at sign-in
+  if (/user \S+ does not exist/i.test(text)) {
+    return "Your account isn't set up for this workspace yet. Sign out and sign in again to finish setting it up.";
+  }
   if (/\bHTTP (404|405)\b/.test(text)) return "This feature isn't available yet.";
   if (/errno|traceback|error performing|server error|function_invocation|\bHTTP 5\d\d\b|server returned (html|non-json)/i.test(text)) {
     return 'Something went wrong on our side. Please try again in a moment.';
