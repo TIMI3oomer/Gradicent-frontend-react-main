@@ -26,7 +26,7 @@ export function Transactions() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // The backend has no account-wide transactions route yet (GET /api/binder/transactions → 404)
+  // Set if the API answers 404 (an older API version without GET /api/binder/transactions)
   const [unavailable, setUnavailable] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
