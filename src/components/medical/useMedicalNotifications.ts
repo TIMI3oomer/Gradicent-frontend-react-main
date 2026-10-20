@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import { mockNotifications } from '../../data/notifications';
+import { notifications as sourceNotifications } from '../../data/notifications';
 import type { Notification } from '../../types';
 
 /**
@@ -11,7 +11,7 @@ import type { Notification } from '../../types';
 const MEDICAL_DOMAINS: ReadonlyArray<Notification['domain']> = ['medical', 'system'];
 const STORAGE_KEY = 'gradicent_medical_read_notifications';
 
-export const medicalNotifications: Notification[] = mockNotifications.filter(n => MEDICAL_DOMAINS.includes(n.domain));
+export const medicalNotifications: Notification[] = sourceNotifications.filter(n => MEDICAL_DOMAINS.includes(n.domain));
 
 function loadReadIds(): Set<string> {
   const initial = medicalNotifications.filter(n => n.read).map(n => n.id);

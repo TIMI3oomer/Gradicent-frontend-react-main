@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import { mockNotifications } from '../../data/notifications';
+import { notifications as sourceNotifications } from '../../data/notifications';
 
 // Single source of truth for business notifications, shared by the top bar bell and the
 // Notifications page so the unread dot always matches the page's unread count.
@@ -8,7 +8,7 @@ import { mockNotifications } from '../../data/notifications';
 
 const STORAGE_KEY = 'gradicent_business_notifications_read';
 
-export const businessNotifications = mockNotifications.filter(n => n.domain === 'business' || n.domain === 'system');
+export const businessNotifications = sourceNotifications.filter(n => n.domain === 'business' || n.domain === 'system');
 
 function loadReadIds(): Set<string> {
   const initial = new Set(businessNotifications.filter(n => n.read).map(n => n.id));
