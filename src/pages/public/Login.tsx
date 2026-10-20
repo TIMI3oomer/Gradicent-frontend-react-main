@@ -57,7 +57,8 @@ export function Login() {
   const [selectedDomain, setSelectedDomain] = useState<Domain>(initialDomain);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  // The API sends failed Google sign-ins back here with ?error=<message>
+  const [error, setError] = useState(() => searchParams.get('error')?.slice(0, 200) ?? '');
 
   const { login, loginWithGoogle, isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
