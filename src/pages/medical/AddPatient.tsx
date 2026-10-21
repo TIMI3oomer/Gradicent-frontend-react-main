@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { fetchPlanStatus, submitClientRegistration } from '../../lib/api';
 import { parseDate, toLocalIsoDate } from '../../lib/formatters';
 import { errorMessage } from '../../components/shared/apiHelpers';
+import { fetchPatients } from '../../components/medical/patientData';
 
 const STEPS = ['Personal Information', 'Medical Information', 'Assignment & Scheduling'];
 
@@ -142,8 +143,25 @@ export function AddPatient() {
     emergencyName: '', emergencyPhone: '',
     condition: '', allergies: '', medications: '', history: '',
     insurance: '', policyNumber: '',
-    doctor: '', appointmentDate: '', notes: '', consent: false,
+    // The signed-in clinician is the most likely assignee
+    doctor: user?.name ?? '', appointmentDate: '', notes: '', consent: false,
   });
+
+  // Suggest doctors already assigned to this account's patients (no built-in staff list exists)
+  const [doctorOptions, setDoctorOptions] = useState<string[]>([]);
+  useEffect(() => {
+    if (!user?.id) return;
+    let ignore = false;
+    fetchPatients(user.id)
+      .then(patients => {
+        if (ignore) return;
+        const names = new Set(patients.map(p => p.doctor).filter((d): d is string => Boolean(d)));
+        if (user.name) names.add(user.name);
+        setDoctorOptions([...names].sort());
+      })
+      .catch(() => { /* suggestions are optional */ });
+    return () => { ignore = true; };
+  }, [user?.id, user?.name]);
 
   const today = toLocalIsoDate();
 
@@ -357,12 +375,20 @@ export function AddPatient() {
                 <div className="medical-form-grid">
                   <div className="form-group medical-span-2">
                     <label className="form-label" htmlFor="doctor">Assign Doctor *</label>
-                    <select id="doctor" className="form-input form-select" required value={form.doctor} onChange={e => update('doctor', e.target.value)} {...errorProps('doctor')}>
-                      <option value="">Select a doctor...</option>
-                      {['Dr. Sarah Chen', 'Dr. James Park', 'Dr. Michael Torres', 'Dr. Amanda Ross', 'Dr. Kevin Lee'].map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
+                    <input
+                      id="doctor"
+                      className="form-input"
+                      required
+                      placeholder="Doctor's name"
+                      list="doctor-options"
+                      autoComplete="off"
+                      value={form.doctor}
+                      onChange={e => update('doctor', e.target.value)}
+                      {...errorProps('doctor')}
+                    />
+                    <datalist id="doctor-options">
+                      {doctorOptions.map(d => <option key={d} value={d} />)}
+                    </datalist>
                     {fieldError('doctor')}
                   </div>
                   <div className="form-group">

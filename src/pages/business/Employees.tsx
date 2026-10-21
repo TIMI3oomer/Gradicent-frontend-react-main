@@ -14,6 +14,17 @@ import { BUSINESS_ROUTES } from '../../lib/constants';
 import type { Employee } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
+import { QuickAddModal, type QuickAddField } from '../../components/business/QuickAddModal';
+
+const EMPLOYEE_FIELDS: QuickAddField[] = [
+  { key: 'name', label: 'Full name', required: true, placeholder: 'Jordan Smith' },
+  { key: 'role', label: 'Role', placeholder: 'Account Manager' },
+  { key: 'department', label: 'Department', placeholder: 'Sales' },
+  { key: 'email', label: 'Email', type: 'email', placeholder: 'name@company.com' },
+  { key: 'phone', label: 'Phone', type: 'tel' },
+  { key: 'status', label: 'Status', type: 'select', options: ['Active', 'On Leave', 'Terminated'] },
+  { key: 'weeklyHours', label: 'Weekly hours', type: 'number', min: 0, placeholder: '40' },
+];
 
 const PAGE_SIZE = 10;
 
@@ -25,6 +36,7 @@ export function Employees() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [adding, setAdding] = useState(false);
 
   const [search, setSearch] = useState('');
   const [dept, setDept] = useState('All');
@@ -157,12 +169,10 @@ export function Employees() {
             <button type="button" aria-label="Table view" aria-pressed={view === 'table'} onClick={() => setView('table')} style={toggleBtnStyle(view === 'table')}><List size={16} aria-hidden="true" /></button>
             <button type="button" aria-label="Card view" aria-pressed={view === 'cards'} onClick={() => setView('cards')} style={toggleBtnStyle(view === 'cards')}><LayoutGrid size={16} aria-hidden="true" /></button>
           </div>
-          {/* No add-employee form exists yet, so keep the action visible but inactive */}
           <button
             type="button"
-            disabled
-            title="Coming soon"
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'not-allowed', opacity: 0.55 }}
+            onClick={() => setAdding(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
           >
             <UserPlus size={16} aria-hidden="true" /> Add Employee
           </button>
@@ -219,6 +229,16 @@ export function Employees() {
           )}
         </>
       )}
+      <QuickAddModal
+        isOpen={adding}
+        onClose={() => setAdding(false)}
+        onCreated={() => setReloadKey(k => k + 1)}
+        title="Add Employee"
+        entity="employee"
+        endpoint="/api/binder/employees"
+        fields={EMPLOYEE_FIELDS}
+        submitLabel="Add Employee"
+      />
     </BusinessLayout>
   );
 }

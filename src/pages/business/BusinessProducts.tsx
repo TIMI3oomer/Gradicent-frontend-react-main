@@ -9,6 +9,16 @@ import { formatCurrency } from '../../lib/formatters';
 import type { Product } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
+import { QuickAddModal, type QuickAddField } from '../../components/business/QuickAddModal';
+
+const PRODUCT_FIELDS: QuickAddField[] = [
+  { key: 'name', label: 'Product name', required: true },
+  { key: 'sku', label: 'SKU', placeholder: 'PRD-001' },
+  { key: 'category', label: 'Category' },
+  { key: 'price', label: 'Price', type: 'number', min: 0, required: true, placeholder: '0.00' },
+  { key: 'stock', label: 'Stock', type: 'number', min: 0, placeholder: '0' },
+  { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Draft', 'Discontinued'] },
+];
 
 type StatusFilter = 'All' | 'Active' | 'Discontinued' | 'Draft';
 
@@ -18,6 +28,7 @@ export function BusinessProducts() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [adding, setAdding] = useState(false);
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
@@ -126,12 +137,10 @@ export function BusinessProducts() {
             {categories.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
           </select>
         </div>
-        {/* No create-product form exists yet, so keep the action visible but inactive */}
         <button
           type="button"
-          disabled
-          title="Coming soon"
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'not-allowed', opacity: 0.55 }}
+          onClick={() => setAdding(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
         >
           <Plus size={16} aria-hidden="true" /> Add Product
         </button>
@@ -154,6 +163,16 @@ export function BusinessProducts() {
           <DataTable data={filtered} columns={columns} rowKey="id" />
         </div>
       )}
+      <QuickAddModal
+        isOpen={adding}
+        onClose={() => setAdding(false)}
+        onCreated={() => setReloadKey(k => k + 1)}
+        title="Add Product"
+        entity="product"
+        endpoint="/api/binder/products"
+        fields={PRODUCT_FIELDS}
+        submitLabel="Add Product"
+      />
     </BusinessLayout>
   );
 }

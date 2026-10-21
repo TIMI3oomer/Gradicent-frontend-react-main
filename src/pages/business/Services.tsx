@@ -9,6 +9,16 @@ import { Briefcase, Plus, Search } from 'lucide-react';
 import type { Service } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
+import { QuickAddModal, type QuickAddField } from '../../components/business/QuickAddModal';
+
+const SERVICE_FIELDS: QuickAddField[] = [
+  { key: 'name', label: 'Service name', required: true },
+  { key: 'category', label: 'Category' },
+  { key: 'billingType', label: 'Billing', type: 'select', options: ['Fixed', 'Hourly', 'Monthly'] },
+  { key: 'basePrice', label: 'Base price', type: 'number', min: 0, placeholder: '0.00' },
+  { key: 'status', label: 'Status', type: 'select', options: ['Active', 'Draft', 'Discontinued'] },
+  { key: 'description', label: 'Description', type: 'textarea' },
+];
 
 export function Services() {
   const { user, isLoading: authLoading } = useAuth();
@@ -16,6 +26,7 @@ export function Services() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [adding, setAdding] = useState(false);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -83,12 +94,10 @@ export function Services() {
             style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--card-bg)', color: 'var(--text)', fontSize: 14 }}
           />
         </div>
-        {/* No create-service form exists yet, so keep the action visible but inactive */}
         <button
           type="button"
-          disabled
-          title="Coming soon"
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'not-allowed', opacity: 0.55 }}
+          onClick={() => setAdding(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 0, borderRadius: 6, fontWeight: 500, cursor: 'pointer' }}
         >
           <Plus size={16} aria-hidden="true" /> Add Service
         </button>
@@ -140,6 +149,16 @@ export function Services() {
           })}
         </div>
       )}
+      <QuickAddModal
+        isOpen={adding}
+        onClose={() => setAdding(false)}
+        onCreated={() => setReloadKey(k => k + 1)}
+        title="Add Service"
+        entity="service"
+        endpoint="/api/binder/services"
+        fields={SERVICE_FIELDS}
+        submitLabel="Add Service"
+      />
     </BusinessLayout>
   );
 }
