@@ -81,6 +81,7 @@ export function Modal({ isOpen, onClose, title, size = 'md', children, footer }:
               {title && <h2 id={titleId} className="modal-title">{title}</h2>}
               <button
                 ref={firstFocusRef}
+                type="button"
                 className="modal-close"
                 onClick={onClose}
                 aria-label="Close modal"
