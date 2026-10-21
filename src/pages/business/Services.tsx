@@ -110,7 +110,7 @@ export function Services() {
       ) : error ? null : services.length === 0 ? (
         <EmptyState
           icon={<Briefcase size={32} />}
-          title="No Services Found"
+          title="No services found"
           description={search ? 'No services match your search.' : 'Services you offer will appear here.'}
         />
       ) : (

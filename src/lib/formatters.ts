@@ -37,7 +37,9 @@ export function formatCurrency(amount: number | string | null | undefined, compa
   if (compact && Math.abs(value) >= 1000) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value / 1000) + 'k';
   }
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+  // Whole amounts stay compact ("$20"); amounts with cents keep them ("$19.99")
+  const digits = Number.isInteger(value) ? 0 : 2;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
 }
 
 export function formatNumber(value: number | string | null | undefined, compact = false): string {

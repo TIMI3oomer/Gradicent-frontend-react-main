@@ -98,7 +98,7 @@ export function BusinessProducts() {
 
   const columns: Column<Product>[] = [
     { key: 'name', header: 'Product', sortable: true, render: v => <div style={{ fontWeight: 600, color: 'var(--text)' }}>{v ? String(v) : '—'}</div> },
-    { key: 'sku', header: 'SKU', render: v => <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{v ? String(v) : '—'}</span> },
+    { key: 'sku', header: 'SKU', render: v => (v ? <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>{String(v)}</span> : '—') },
     { key: 'category', header: 'Category', render: v => (v ? <span style={{ fontSize: 12, padding: '2px 8px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4 }}>{String(v)}</span> : '—') },
     {
       key: 'price', header: 'Price', align: 'right', sortable: true, render: v => (
@@ -153,7 +153,7 @@ export function BusinessProducts() {
       ) : error ? null : filtered.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: 48 }}>
           <Package size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 12px' }} aria-hidden="true" />
-          <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>No Products Found</div>
+          <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>No products found</div>
           <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
             {search || statusFilter !== 'All' || categoryFilter !== 'All' ? 'No products match your search or filters.' : 'Products you sell will appear here.'}
           </div>
