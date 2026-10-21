@@ -2,7 +2,7 @@
 import { api } from '../../lib/api';
 import { calculateAge, parseDate } from '../../lib/formatters';
 import { isMissingEndpoint, toArray, toRecord } from '../shared/apiHelpers';
-import type { Patient } from '../../types';
+import type { Patient, PatientNote } from '../../types';
 
 export const MEDICAL_DOMAIN = 'medical';
 const CLIENTS_ENDPOINT = '/api/binder/clients';
@@ -34,6 +34,14 @@ function pick(sources: Raw[], ...keys: string[]): unknown {
   return undefined;
 }
 
+/**
+ * The Edit Patient form writes its fields back under these top-level keys. An explicit string there
+ * (even an empty one, i.e. a cleared field) wins over older copies nested under `client` etc.
+ */
+function pickEditable(raw: Raw, sources: Raw[], key: string, ...aliases: string[]): unknown {
+  return typeof raw[key] === 'string' ? raw[key] : pick(sources, key, ...aliases);
+}
+
 function text(value: unknown): string {
   if (isBlank(value)) return '';
   return typeof value === 'object' ? '' : String(value).trim();
@@ -54,6 +62,16 @@ function list(value: unknown): string[] {
   }
   if (typeof value === 'string') return value.split(/[\n,;]+/).map(item => item.trim()).filter(Boolean);
   return [];
+}
+
+/** `notes_log` entries are { text, createdAt }; plain strings from older data are accepted too. */
+function notesLog(value: unknown): PatientNote[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => (isObject(item)
+      ? { text: text(item.text ?? item.note ?? item.body), createdAt: text(item.createdAt ?? item.created_at) }
+      : { text: text(item), createdAt: '' }))
+    .filter(note => note.text);
 }
 
 function normalizeGender(value: unknown): Patient['gender'] {
@@ -86,7 +104,7 @@ export function normalizePatient(input: unknown): Patient | null {
 
   const first = text(pick(src, 'first_name', 'firstName'));
   const last = text(pick(src, 'last_name', 'lastName'));
-  const name = text(pick(src, 'name', 'full_name', 'fullName', 'client_name', 'clientName', 'patient_name')) || [first, last].filter(Boolean).join(' ');
+  const name = text(pickEditable(input, src, 'name', 'full_name', 'fullName', 'client_name', 'clientName', 'patient_name')) || [first, last].filter(Boolean).join(' ');
 
   const dob = text(pick(src, 'dob', 'date_of_birth', 'dateOfBirth', 'birth_date', 'birthDate'));
   const age = numberOrNull(pick(src, 'age')) ?? (parseDate(dob) ? calculateAge(dob) : null);
@@ -103,19 +121,20 @@ export function normalizePatient(input: unknown): Patient | null {
     dob,
     age,
     gender: normalizeGender(pick(src, 'gender', 'sex')),
-    email: text(pick(src, 'email', 'email_address')),
-    phone: text(pick(src, 'phone', 'mobile', 'phone_number', 'phoneNumber')),
-    address: text(pick(src, 'address', 'home_address')),
-    primaryCondition: text(pick(src, 'primary_condition', 'primaryCondition', 'condition', 'diagnosis')),
+    email: text(pickEditable(input, src, 'email', 'email_address')),
+    phone: text(pickEditable(input, src, 'phone', 'mobile', 'phone_number', 'phoneNumber')),
+    address: text(pickEditable(input, src, 'address', 'home_address')),
+    primaryCondition: text(pickEditable(input, src, 'primary_condition', 'primaryCondition', 'condition', 'diagnosis')),
     secondaryConditions: list(pick(src, 'secondary_conditions', 'secondaryConditions')),
     allergies: list(pick(src, 'allergies')),
     medications: list(pick(src, 'medications', 'current_medications')),
     medicalHistory: text(pick(src, 'medical_history', 'medicalHistory', 'history')),
     lastVisit: text(pick(src, 'last_visit', 'lastVisit', 'last_visit_date')) || null,
     nextAppointment: nextAppointment || null,
-    status: normalizeStatus(pick(src, 'status', 'patient_status')),
-    doctor: text(pick(src, 'assigned_doctor', 'assignedDoctor', 'doctor', 'doctor_name', 'doctorName')),
+    status: normalizeStatus(pickEditable(input, src, 'status', 'patient_status')),
+    doctor: text(pickEditable(input, src, 'assigned_doctor', 'assignedDoctor', 'doctor', 'doctor_name', 'doctorName')),
     notes: text(pick(src, 'notes', 'note')),
+    notesLog: notesLog(pick(src, 'notes_log', 'notesLog')),
     insuranceProvider: text(pick(src, 'insurance_provider', 'insuranceProvider', 'insurance')),
     policyNumber: text(pick(src, 'policy_number', 'policyNumber')),
     totalVisits: numberOrNull(pick(src, 'total_visits', 'totalVisits', 'visit_count')),
@@ -167,6 +186,16 @@ export async function fetchPatient(userId: string | number, id: string): Promise
     const all = await fetchPatients(userId);
     return all.find(p => p.id === id) ?? null;
   }
+}
+
+/** PATCH merges `patch` into the stored patient record. */
+export async function updatePatient(userId: string | number, id: string, patch: Record<string, unknown>) {
+  const query = api.getContextQuery(MEDICAL_DOMAIN, userId);
+  return api.updateEntity<unknown>([`${CLIENTS_ENDPOINT}/${encodeURIComponent(id)}${query}`], {
+    domain: MEDICAL_DOMAIN,
+    user_id: userId,
+    patch,
+  });
 }
 
 export type VisitRecord = {

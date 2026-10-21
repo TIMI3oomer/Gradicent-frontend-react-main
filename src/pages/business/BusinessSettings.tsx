@@ -1,23 +1,34 @@
 import { useState } from 'react';
 import { BusinessLayout } from '../../layouts/BusinessLayout/BusinessLayout';
 import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
 import { Moon, Sun } from 'lucide-react';
+import { ErrorBanner, LoadingState } from '../../components/shared/PageStatus';
+import { SettingsForm, type SettingsField } from '../../components/shared/SettingsForm';
+import { NotificationPreferences } from '../../components/shared/NotificationPreferences';
+import { profileText, useUserProfile } from '../../components/shared/userProfile';
 
 const TABS = ['General', 'Notifications', 'Integrations', 'Danger Zone'] as const;
 type Tab = typeof TABS[number];
 
-// None of the settings below have a backend endpoint yet (there is no profile update,
-// preferences, integrations or account-deletion route), so their controls are shown
-// disabled instead of pretending to save.
+// Integrations and account deletion have no backend endpoint yet, so those controls stay disabled.
 const COMING_SOON = 'Coming soon';
 
 const notifItems = [
-  { key: 'email', label: 'Email Notifications', desc: 'Receive all updates via email', on: true },
-  { key: 'newClient', label: 'New Client Alerts', desc: 'Notify when a new client is added', on: true },
-  { key: 'churn', label: 'Churn Risk Alerts', desc: 'Alert when a client shows churn signals', on: true },
-  { key: 'payment', label: 'Payment Notifications', desc: 'Alerts for successful and failed payments', on: true },
-  { key: 'reports', label: 'Weekly Reports', desc: 'Automated weekly performance digest', on: false },
+  { key: 'email', label: 'Email Notifications', desc: 'Receive all updates via email' },
+  { key: 'newClient', label: 'New Client Alerts', desc: 'Notify when a new client is added' },
+  { key: 'churn', label: 'Churn Risk Alerts', desc: 'Alert when a client shows churn signals' },
+  { key: 'payment', label: 'Payment Notifications', desc: 'Alerts for successful and failed payments' },
+  { key: 'reports', label: 'Weekly Reports', desc: 'Automated weekly performance digest' },
+];
+
+const defaultNotifs: Record<string, boolean> = { email: true, newClient: true, churn: true, payment: true, reports: false };
+
+const profileFields: SettingsField[] = [
+  { key: 'name', label: 'Full Name', required: true, autoComplete: 'name' },
+  { key: 'email', label: 'Email', type: 'email', readOnly: true, hint: 'Comes from your Google account.' },
+  { key: 'company', label: 'Company', autoComplete: 'organization', placeholder: 'Your company' },
+  { key: 'job_title', label: 'Job Title', autoComplete: 'organization-title', placeholder: 'e.g. Founder' },
+  { key: 'phone', label: 'Phone', type: 'tel', autoComplete: 'tel', placeholder: '(555) 000-0000' },
 ];
 
 const integrations = [
@@ -29,17 +40,15 @@ const integrations = [
   { name: 'Zapier', desc: '2,000+ app integrations' },
 ];
 
-function companyOf(user: unknown): string {
-  if (!user || typeof user !== 'object') return '';
-  const u = user as Record<string, unknown>;
-  const value = u.company ?? u.companyName ?? u.company_name ?? u.organization;
-  return typeof value === 'string' ? value : '';
-}
-
 export function BusinessSettings() {
   const [tab, setTab] = useState<Tab>('General');
   const { isDark, toggleDark } = useTheme();
-  const { user } = useAuth();
+  const profile = useUserProfile('business');
+  const { record } = profile;
+
+  const profileStatus = profile.isLoading
+    ? <LoadingState label="Loading your profile..." padding="24px 0" />
+    : profile.loadError ? <ErrorBanner message={profile.loadError} onRetry={profile.reload} /> : null;
 
   return (
     <BusinessLayout title="Settings">
@@ -48,6 +57,7 @@ export function BusinessSettings() {
           {TABS.map(t => (
             <button
               key={t}
+              type="button"
               role="tab"
               id={`settings-tab-${t}`}
               aria-selected={tab === t}
@@ -62,22 +72,27 @@ export function BusinessSettings() {
             <>
               <div className="card" style={{ marginBottom: 16 }}>
                 <div className="card-title" style={{ marginBottom: 20 }}>Profile</div>
-                <div className="biz-grid-2">
-                  {[
-                    { label: 'Full Name', value: user?.name, id: 'bname' },
-                    { label: 'Email', value: user?.email, id: 'bemail' },
-                    { label: 'Company', value: companyOf(user), id: 'bcompany' },
-                  ].map(f => (
-                    <div key={f.id} className="form-group" style={{ minWidth: 0 }}>
-                      <label className="form-label" htmlFor={f.id}>{f.label}</label>
-                      <input id={f.id} className="form-input" value={f.value ?? ''} placeholder="—" readOnly />
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 8 }}>
-                  <button className="btn-primary btn-md" disabled title={COMING_SOON}>Save Changes</button>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Profile editing is coming soon.</span>
-                </div>
+                {profileStatus ?? (
+                  // Mounted only after the profile has loaded, so its initial values are the saved ones
+                  <SettingsForm
+                    fields={profileFields}
+                    gridClassName="biz-grid-2"
+                    initialValues={{
+                      name: profileText(record, 'name', 'full_name'),
+                      email: profileText(record, 'email') || profile.email,
+                      company: profileText(record, 'company', 'company_name', 'organization'),
+                      job_title: profileText(record, 'job_title', 'jobTitle', 'title'),
+                      phone: profileText(record, 'phone', 'phone_number'),
+                    }}
+                    onSave={values => profile.save({
+                      name: values.name,
+                      company: values.company,
+                      job_title: values.job_title,
+                      phone: values.phone,
+                    })}
+                    savedMessage="Profile saved."
+                  />
+                )}
               </div>
 
               <div className="card">
@@ -88,6 +103,7 @@ export function BusinessSettings() {
                     <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Switch between light and dark themes</div>
                   </div>
                   <button
+                    type="button"
                     onClick={toggleDark}
                     aria-pressed={isDark}
                     style={{
@@ -109,29 +125,10 @@ export function BusinessSettings() {
           {tab === 'Notifications' && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: 8 }}>Notification Preferences</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Changing notification preferences is coming soon. These are the current defaults.</div>
-              {notifItems.map((item, i) => (
-                <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 0', borderBottom: i < notifItems.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
-                  <div>
-                    <div id={`notif-${item.key}`} style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.label}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{item.desc}</div>
-                  </div>
-                  <button
-                    role="switch"
-                    aria-checked={item.on}
-                    aria-labelledby={`notif-${item.key}`}
-                    disabled
-                    title={COMING_SOON}
-                    style={{
-                      width: 44, height: 24, borderRadius: 12,
-                      background: item.on ? 'var(--primary)' : 'var(--border)',
-                      border: 'none', cursor: 'not-allowed', position: 'relative', flexShrink: 0, opacity: 0.6,
-                    }}
-                  >
-                    <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: item.on ? 23 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
-                  </button>
-                </div>
-              ))}
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Changes are saved to your account as soon as you flip a switch.</div>
+              {profileStatus ?? (
+                <NotificationPreferences items={notifItems} defaults={defaultNotifs} record={record} save={profile.save} onColor="var(--primary)" />
+              )}
             </div>
           )}
 

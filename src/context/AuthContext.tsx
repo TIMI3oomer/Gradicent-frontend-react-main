@@ -15,6 +15,8 @@ interface AuthContextValue {
   login: (email: string, password: string, domain: string) => Promise<void>;
   loginWithGoogle: (domain: string) => void; 
   logout: (domain?: string) => Promise<void>;
+  /** Apply profile changes saved elsewhere (e.g. Settings) so the header/sidebar update at once */
+  updateUser: (changes: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -104,15 +106,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = `${API_BASE_URL}/start?provider=google&domain=${encodeURIComponent(domain)}&redirect_uri=${encodeURIComponent(frontendCallbackRoute)}`;
   }, []);
 
+  const updateUser = useCallback((changes: Partial<User>) => {
+    setUser(prev => (prev ? { ...prev, ...changes } : prev));
+  }, []);
+
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user, 
-        isLoading, 
-        login, 
-        loginWithGoogle, 
-        logout 
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        loginWithGoogle,
+        logout,
+        updateUser,
       }}
     >
       {/* Public pages render immediately; ProtectedRoute waits for isLoading itself */}

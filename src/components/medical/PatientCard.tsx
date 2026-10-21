@@ -66,12 +66,13 @@ export function PatientCard({ patient, index = 0 }: PatientCardProps) {
           View Profile
         </button>
         <button
+          type="button"
           className="patient-action-icon-btn"
-          aria-label={`Add note for ${patient.name || 'patient'} (coming soon)`}
-          title="Coming soon"
-          disabled
+          aria-label={`Add note for ${patient.name || 'patient'}`}
+          title="Add note"
+          onClick={() => navigate(`${profilePath}?tab=notes`)}
         >
-          <Note size={14} />
+          <Note size={14} aria-hidden="true" />
         </button>
         <button
           className="patient-action-icon-btn"

@@ -1,5 +1,5 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, CreditCard as Edit2, Calendar, FileText, Printer, HeartPulse } from 'lucide-react';
 import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
@@ -7,7 +7,9 @@ import { Avatar } from '../../components/shared/Avatar';
 import { Badge, type BadgeVariant } from '../../components/shared/Badge';
 import { ErrorBanner, LoadingState, UnavailableNotice } from '../../components/shared/PageStatus';
 import { SIGNED_OUT_MESSAGE, errorMessage, isMissingEndpoint } from '../../components/shared/apiHelpers';
-import { MEDICAL_DOMAIN, fetchPatient, toVisits, type VisitRecord } from '../../components/medical/patientData';
+import { MEDICAL_DOMAIN, fetchPatient, toVisits, updatePatient, type VisitRecord } from '../../components/medical/patientData';
+import { EditPatientModal } from '../../components/medical/EditPatientModal';
+import type { SaveStatus } from '../../components/shared/userProfile';
 import { formatDate, formatRelativeTime } from '../../lib/formatters';
 import { MEDICAL_ROUTES } from '../../lib/constants';
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +17,16 @@ import { api } from '../../lib/api';
 import type { Patient } from '../../types';
 
 const TABS = ['Overview', 'Visit History', 'Vitals', 'Notes & Documents', 'Insurance'] as const;
+type Tab = typeof TABS[number];
+/** `?tab=<slug>` opens a section directly, e.g. /medical/patients/123?tab=notes */
+const TAB_SLUGS: Record<Tab, string> = {
+  Overview: 'overview',
+  'Visit History': 'visits',
+  Vitals: 'vitals',
+  'Notes & Documents': 'notes',
+  Insurance: 'insurance',
+};
+const tabFromSlug = (slug: string | null): Tab => TABS.find(t => TAB_SLUGS[t] === slug) ?? 'Overview';
 const GENDER_LABELS: Record<string, string> = { M: 'Male', F: 'Female', Other: 'Other' };
 
 type VisitState = { rows: VisitRecord[]; error: string | null; unavailable: boolean };
@@ -29,11 +41,24 @@ export function PatientDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [activeTab, setActiveTab] = useState<typeof TABS[number]>('Overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTabState] = useState<Tab>(() => tabFromSlug(searchParams.get('tab')));
+  // Arriving from a patient card's "Add note" button puts the cursor straight in the note box
+  const [focusNoteOnOpen] = useState(() => searchParams.get('tab') === TAB_SLUGS['Notes & Documents']);
   const [noteDraft, setNoteDraft] = useState('');
-  // No notes API exists yet, so notes are kept for this session only and labelled as such
-  const [allLocalNotes, setLocalNotes] = useState<{ id: number; patientId: string | undefined; text: string; createdAt: string }[]>([]);
-  const localNotes = allLocalNotes.filter(note => note.patientId === id);
+  const [noteStatus, setNoteStatus] = useState<SaveStatus>(null);
+  const [editOpen, setEditOpen] = useState(false);
+
+  // Keep the open section in the URL so a reload or shared link lands on the same tab
+  const setActiveTab = (tab: Tab) => {
+    setActiveTabState(tab);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      if (tab === 'Overview') next.delete('tab');
+      else next.set('tab', TAB_SLUGS[tab]);
+      return next;
+    }, { replace: true });
+  };
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let next = index;
@@ -62,6 +87,7 @@ export function PatientDetail() {
     const loadPatient = async () => {
       setIsLoading(true);
       setError(null);
+      setNoteStatus(null);
       const query = api.getContextQuery(MEDICAL_DOMAIN, userId);
       // The record and its visit history load independently so a missing history route doesn't break the page
       const [patientRes, visitsRes] = await Promise.allSettled([
@@ -91,11 +117,32 @@ export function PatientDetail() {
 
   const retry = user?.id ? () => setReloadKey(k => k + 1) : undefined;
 
-  const handleSaveNote = () => {
+  // Notes live on the patient record as `notes_log`; the new one is appended to what is already there
+  const handleSaveNote = async () => {
     const text = noteDraft.trim();
-    if (!text) return;
-    setLocalNotes(notes => [{ id: Date.now(), patientId: id, text, createdAt: new Date().toISOString() }, ...notes]);
-    setNoteDraft('');
+    if (!text || !id || !user?.id || !patient || noteStatus?.type === 'saving') return;
+    const nextLog = [...patient.notesLog, { text, createdAt: new Date().toISOString() }];
+    setNoteStatus({ type: 'saving' });
+    try {
+      await updatePatient(user.id, id, { notes_log: nextLog });
+      setPatient(prev => (prev ? { ...prev, notesLog: nextLog } : prev));
+      setNoteDraft('');
+      setNoteStatus({ type: 'saved' });
+    } catch (err) {
+      setNoteStatus({ type: 'error', message: errorMessage(err, 'Could not save the note.') });
+    }
+  };
+
+  // Refresh the record after an edit without swapping the whole page for a spinner
+  const handlePatientSaved = async () => {
+    if (!id || !user?.id) return;
+    try {
+      const fresh = await fetchPatient(user.id, id);
+      if (fresh) setPatient(fresh);
+      else setReloadKey(k => k + 1);
+    } catch {
+      setReloadKey(k => k + 1);
+    }
   };
 
   if (isLoading) {
@@ -177,9 +224,8 @@ export function PatientDetail() {
               type="button"
               className="btn-secondary btn-sm"
               style={{ display: 'flex', alignItems: 'center', gap: 5 }}
-              disabled
-              title="Coming soon"
-              aria-label="Edit patient (coming soon)"
+              onClick={() => setEditOpen(true)}
+              aria-haspopup="dialog"
             >
               <Edit2 size={13} aria-hidden="true" /> Edit
             </button>
@@ -344,46 +390,62 @@ export function PatientDetail() {
       {activeTab === 'Notes & Documents' && (
         <div className="card" style={{ maxWidth: 600 }}>
           <div className="card-title" style={{ marginBottom: 16 }}>Clinical Notes</div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <label htmlFor="clinical-note" className="sr-only">Clinical note</label>
-            <textarea
-              id="clinical-note"
-              className="form-input form-textarea"
-              placeholder="Add a clinical note..."
-              style={{ flex: 1 }}
-              value={noteDraft}
-              onChange={e => setNoteDraft(e.target.value)}
-              aria-describedby="clinical-note-hint"
-            />
-          </div>
-          <div id="clinical-note-hint" style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-            Notes are saved locally for this session only and are not yet synced to the patient record.
-          </div>
-          <button
-            type="button"
-            className="btn-primary btn-md"
-            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
-            onClick={handleSaveNote}
-            disabled={noteDraft.trim().length === 0}
+          <form
+            onSubmit={e => { e.preventDefault(); handleSaveNote(); }}
+            aria-busy={noteStatus?.type === 'saving' || undefined}
           >
-            <FileText size={14} aria-hidden="true" /> Save note locally
-          </button>
-          {localNotes.length > 0 && (
-            <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }} aria-live="polite">
-              {localNotes.map(note => (
-                <div key={note.id} style={{ padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 8, border: '1px dashed var(--border)' }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <label htmlFor="clinical-note" className="sr-only">Clinical note</label>
+              <textarea
+                id="clinical-note"
+                className="form-input form-textarea"
+                placeholder="Add a clinical note..."
+                style={{ flex: 1 }}
+                value={noteDraft}
+                autoFocus={focusNoteOnOpen}
+                readOnly={noteStatus?.type === 'saving'}
+                onChange={e => {
+                  setNoteDraft(e.target.value);
+                  if (noteStatus?.type !== 'saving') setNoteStatus(null);
+                }}
+                aria-describedby="clinical-note-status"
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <button
+                type="submit"
+                className="btn-primary btn-md"
+                style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                disabled={noteDraft.trim().length === 0 || noteStatus?.type === 'saving'}
+              >
+                <FileText size={14} aria-hidden="true" /> {noteStatus?.type === 'saving' ? 'Saving…' : 'Save note'}
+              </button>
+              <span id="clinical-note-status" role="status" aria-live="polite" style={{ fontSize: 13 }}>
+                {noteStatus?.type === 'saved' && <span style={{ color: 'var(--success)' }}>Note saved to the patient record.</span>}
+                {noteStatus?.type === 'error' && <span style={{ color: 'var(--danger)' }}>{noteStatus.message}</span>}
+              </span>
+            </div>
+          </form>
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {patient.notesLog.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>No clinical notes yet.</div>
+            ) : [...patient.notesLog].reverse().map((note, i) => (
+              <div key={`${note.createdAt}-${i}`} style={{ padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 8 }}>
+                {note.createdAt && (
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
-                    Saved locally · {formatRelativeTime(note.createdAt)}
+                    <time dateTime={note.createdAt} title={formatDate(note.createdAt, 'medium')}>{formatRelativeTime(note.createdAt)}</time>
                   </div>
-                  <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{note.text}</div>
-                </div>
-              ))}
+                )}
+                <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{note.text}</div>
+              </div>
+            ))}
+          </div>
+          {patient.notes && (
+            <div style={{ marginTop: 20, padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 8 }}>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Registration Note</div>
+              <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{patient.notes}</div>
             </div>
           )}
-          <div style={{ marginTop: 20, padding: '12px 16px', background: 'var(--surface-alt)', borderRadius: 8 }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Most Recent Note</div>
-            <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}>{patient.notes || 'No notes on file.'}</div>
-          </div>
         </div>
       )}
 
@@ -396,6 +458,16 @@ export function PatientDetail() {
         </div>
       )}
       </div>
+
+      {user?.id && (
+        <EditPatientModal
+          isOpen={editOpen}
+          onClose={() => setEditOpen(false)}
+          onSaved={handlePatientSaved}
+          patient={patient}
+          userId={user.id}
+        />
+      )}
     </MedicalLayout>
   );
 }

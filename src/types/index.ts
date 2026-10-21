@@ -1,5 +1,11 @@
 // Binder Software Shared Types
 
+export interface PatientNote {
+  text: string;
+  /** ISO timestamp; may be empty for older entries */
+  createdAt: string;
+}
+
 export interface Patient {
   id: string;
   name: string;
@@ -20,6 +26,8 @@ export interface Patient {
   status: 'Active' | 'Discharged' | 'Pending';
   doctor: string;
   notes: string;
+  /** Clinical notes stored on the record as `notes_log`, oldest first */
+  notesLog: PatientNote[];
   insuranceProvider: string;
   policyNumber: string;
   totalVisits: number | null;

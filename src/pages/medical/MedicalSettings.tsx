@@ -1,6 +1,10 @@
 import { useState, type KeyboardEvent } from 'react';
+import { ExternalLink, ShieldCheck } from 'lucide-react';
 import { MedicalLayout } from '../../layouts/MedicalLayout/MedicalLayout';
-import { useAuth } from '../../context/AuthContext';
+import { ErrorBanner, LoadingState } from '../../components/shared/PageStatus';
+import { SettingsForm, type SettingsField } from '../../components/shared/SettingsForm';
+import { NotificationPreferences } from '../../components/shared/NotificationPreferences';
+import { profileObject, profileText, useUserProfile } from '../../components/shared/userProfile';
 
 const TABS = ['Profile', 'Clinic Info', 'Notifications', 'Security'] as const;
 type Tab = typeof TABS[number];
@@ -14,20 +18,37 @@ const notifItems = [
   { key: 'digest', label: 'Weekly Digest', desc: 'A weekly summary of activity' },
 ];
 
-// Defaults shown until notification preferences can be saved to the account
+// Used for any toggle the account hasn't saved yet
 const defaultNotifs: Record<string, boolean> = { email: true, sms: false, newPatient: true, reminders: true, system: true, digest: false };
+
+const profileFields: SettingsField[] = [
+  { key: 'name', label: 'Full Name', required: true, autoComplete: 'name' },
+  { key: 'email', label: 'Email', type: 'email', readOnly: true, hint: 'Comes from your Google account.' },
+  { key: 'phone', label: 'Phone', type: 'tel', autoComplete: 'tel', placeholder: '(555) 000-0000' },
+  { key: 'specialty', label: 'Specialty', placeholder: 'e.g. General Practice' },
+  { key: 'license_number', label: 'License Number', placeholder: 'Not set' },
+];
+
+const clinicFields: SettingsField[] = [
+  { key: 'name', label: 'Clinic Name', autoComplete: 'organization', placeholder: 'Your clinic name' },
+  { key: 'phone', label: 'Phone', type: 'tel', autoComplete: 'tel', placeholder: '(555) 000-0000' },
+  { key: 'email', label: 'Email', type: 'email', autoComplete: 'email', placeholder: 'clinic@example.com' },
+  { key: 'address', label: 'Address', autoComplete: 'street-address', placeholder: 'Street, City, State ZIP', className: 'medical-span-2' },
+];
+
+const GOOGLE_SECURITY_URL = 'https://myaccount.google.com/security';
 
 const tabId = (i: number) => `settings-tab-${i}`;
 
-function ComingSoonNote({ children }: { children: string }) {
-  return (
-    <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 8 }}>{children}</p>
-  );
-}
-
 export function MedicalSettings() {
   const [tab, setTab] = useState<Tab>('Profile');
-  const { user } = useAuth();
+  const profile = useUserProfile('medical');
+  const { record } = profile;
+  const clinic = profileObject(record, 'clinic');
+
+  const profileStatus = profile.isLoading
+    ? <LoadingState label="Loading your profile..." padding="24px 0" />
+    : profile.loadError ? <ErrorBanner message={profile.loadError} onRetry={profile.reload} /> : null;
 
   const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     let next = index;
@@ -81,109 +102,87 @@ export function MedicalSettings() {
           {tab === 'Profile' && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: 20 }}>Profile Information</div>
-              <div className="medical-form-grid">
-                {[
-                  { label: 'Full Name', value: user?.name, id: 'pname' },
-                  { label: 'Email', value: user?.email, id: 'pemail' },
-                  { label: 'License Number', value: user?.licenseNumber, id: 'plicense' },
-                  { label: 'Specialty', value: user?.specialty, id: 'pspec' },
-                ].map(f => (
-                  <div key={f.id} className="form-group">
-                    <label className="form-label" htmlFor={f.id}>{f.label}</label>
-                    <input id={f.id} className="form-input" value={f.value ?? ''} placeholder="Not set" readOnly />
-                  </div>
-                ))}
-              </div>
-              <button className="btn-primary btn-md" style={{ marginTop: 8 }} disabled title="Coming soon">
-                Save Changes
-              </button>
-              <ComingSoonNote>Editing your profile from here is coming soon.</ComingSoonNote>
+              {profileStatus ?? (
+                // Mounted only after the profile has loaded, so its initial values are the saved ones
+                <SettingsForm
+                  fields={profileFields}
+                  gridClassName="medical-form-grid"
+                  initialValues={{
+                    name: profileText(record, 'name', 'full_name'),
+                    email: profileText(record, 'email') || profile.email,
+                    phone: profileText(record, 'phone', 'phone_number'),
+                    specialty: profileText(record, 'specialty'),
+                    license_number: profileText(record, 'license_number', 'licenseNumber'),
+                  }}
+                  onSave={values => profile.save({
+                    name: values.name,
+                    phone: values.phone,
+                    specialty: values.specialty,
+                    license_number: values.license_number,
+                  })}
+                  savedMessage="Profile saved."
+                />
+              )}
             </div>
           )}
 
           {tab === 'Notifications' && (
             <div className="card">
-              <div className="card-title" style={{ marginBottom: 20 }}>Notification Preferences</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                {notifItems.map((item, i) => (
-                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '14px 0', borderBottom: i < notifItems.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{item.label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{item.desc}</div>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={defaultNotifs[item.key]}
-                      aria-label={`${item.label} (coming soon)`}
-                      disabled
-                      title="Coming soon"
-                      style={{
-                        width: 44, height: 24, borderRadius: 12,
-                        background: defaultNotifs[item.key] ? 'var(--accent)' : 'var(--border)',
-                        border: 'none', position: 'relative', flexShrink: 0,
-                      }}
-                    >
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'white', position: 'absolute', top: 3, left: defaultNotifs[item.key] ? 23 : 3, boxShadow: '0 1px 4px rgba(0,0,0,0.2)' }} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <ComingSoonNote>Changing notification preferences is coming soon. These are the current defaults.</ComingSoonNote>
+              <div className="card-title" style={{ marginBottom: 8 }}>Notification Preferences</div>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Changes are saved to your account as soon as you flip a switch.</p>
+              {profileStatus ?? (
+                <NotificationPreferences items={notifItems} defaults={defaultNotifs} record={record} save={profile.save} onColor="var(--accent)" />
+              )}
             </div>
           )}
 
           {tab === 'Clinic Info' && (
             <div className="card">
               <div className="card-title" style={{ marginBottom: 20 }}>Clinic Information</div>
-              <fieldset disabled style={{ border: 'none', padding: 0, margin: 0, minWidth: 0 }}>
-                <div className="medical-form-grid">
-                  {[
-                    { label: 'Clinic Name', id: 'cname', placeholder: 'Your clinic name' },
-                    { label: 'Phone', id: 'cphone', placeholder: '(555) 000-0000' },
-                    { label: 'Email', id: 'cemail', placeholder: 'clinic@example.com' },
-                    { label: 'Specialty', id: 'cspec', placeholder: 'e.g. General Practice' },
-                  ].map(f => (
-                    <div key={f.id} className="form-group">
-                      <label className="form-label" htmlFor={f.id}>{f.label}</label>
-                      <input id={f.id} className="form-input" placeholder={f.placeholder} />
-                    </div>
-                  ))}
-                  <div className="form-group medical-span-2">
-                    <label className="form-label" htmlFor="caddress">Address</label>
-                    <input id="caddress" className="form-input" placeholder="Street, City, State ZIP" />
-                  </div>
-                </div>
-                <button className="btn-primary btn-md" style={{ marginTop: 8 }} title="Coming soon">
-                  Save Changes
-                </button>
-              </fieldset>
-              <ComingSoonNote>Managing clinic details is coming soon.</ComingSoonNote>
+              {profileStatus ?? (
+                <SettingsForm
+                  fields={clinicFields}
+                  gridClassName="medical-form-grid"
+                  initialValues={{
+                    name: profileText(clinic, 'name'),
+                    phone: profileText(clinic, 'phone'),
+                    email: profileText(clinic, 'email'),
+                    address: profileText(clinic, 'address'),
+                  }}
+                  onSave={values => profile.save({
+                    // Keep any other clinic details already on the record
+                    clinic: { ...clinic, name: values.name, phone: values.phone, email: values.email, address: values.address },
+                  })}
+                  savedMessage="Clinic details saved."
+                />
+              )}
             </div>
           )}
 
           {tab === 'Security' && (
             <div className="card">
-              <div className="card-title" style={{ marginBottom: 20 }}>Security Settings</div>
-              <fieldset disabled style={{ border: 'none', padding: 0, margin: '0 0 24px', minWidth: 0 }}>
-                <legend style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>Change Password</legend>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="curpwd">Current Password</label>
-                  <input id="curpwd" className="form-input" type="password" autoComplete="current-password" />
+              <div className="card-title" style={{ marginBottom: 16 }}>Security</div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16 }}>
+                <ShieldCheck size={22} aria-hidden="true" style={{ color: 'var(--accent)', flexShrink: 0, marginTop: 2 }} />
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, marginBottom: 6 }}>
+                    You sign in to Binder Software with your Google account, so there is no separate Binder password to manage.
+                  </p>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                    Your password, two-step verification and signed-in devices are managed in your Google account settings.
+                  </p>
                 </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="newpwd">New Password</label>
-                  <input id="newpwd" className="form-input" type="password" autoComplete="new-password" />
-                </div>
-                <button className="btn-primary btn-md" title="Coming soon">Update Password</button>
-                <ComingSoonNote>Changing your password from the dashboard is coming soon.</ComingSoonNote>
-              </fieldset>
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>Two-Factor Authentication</div>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>Add an extra layer of security to your account.</p>
-                <button className="btn-secondary btn-md" disabled title="Coming soon">Enable 2FA</button>
-                <ComingSoonNote>Two-factor authentication is coming soon.</ComingSoonNote>
               </div>
+              <a
+                href={GOOGLE_SECURITY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-secondary btn-md"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
+              >
+                Manage Google account security <ExternalLink size={14} aria-hidden="true" />
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
             </div>
           )}
         </div>
