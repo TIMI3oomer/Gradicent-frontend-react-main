@@ -104,3 +104,15 @@ export function generateAvatarColor(name: string | null | undefined): string {
   for (let i = 0; i < source.length; i++) hash = source.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
 }
+
+/** 1536 -> "1.5 KB"; null/invalid -> placeholder. */
+export function formatFileSize(bytes: number | string | null | undefined): string {
+  const n = toNumber(bytes);
+  if (n === null || n < 0) return EMPTY;
+  if (n < 1024) return `${n} B`;
+  const units = ['KB', 'MB', 'GB'];
+  let value = n / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit += 1; }
+  return `${value >= 10 ? Math.round(value) : value.toFixed(1)} ${units[unit]}`;
+}

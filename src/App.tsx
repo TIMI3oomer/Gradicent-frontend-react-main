@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
@@ -7,46 +7,48 @@ import { APP_NAME, MEDICAL_ROUTES, BUSINESS_ROUTES } from './lib/constants';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/shared/ProtectedRoute';
+import { AppErrorBoundary, loadPage } from './components/shared/AppErrorBoundary';
+import { LoadingState } from './components/shared/PageStatus';
 
-// Public
+// Public (the landing and sign-in pages load with the app; everything else on demand)
 import { LandingPage } from './pages/public/LandingPage/LandingPage';
 import { Login } from './pages/public/Login';
-import { MedicalLanding } from './pages/public/MedicalLanding';
-import { Products } from './pages/public/Products';
-import { Privacy } from './pages/public/Privacy';
-import { Terms } from './pages/public/Terms';
 import { NotFound } from './pages/public/NotFound';
+const MedicalLanding = lazy(() => loadPage(() => import('./pages/public/MedicalLanding')).then(m => ({ default: m.MedicalLanding })));
+const Products = lazy(() => loadPage(() => import('./pages/public/Products')).then(m => ({ default: m.Products })));
+const Privacy = lazy(() => loadPage(() => import('./pages/public/Privacy')).then(m => ({ default: m.Privacy })));
+const Terms = lazy(() => loadPage(() => import('./pages/public/Terms')).then(m => ({ default: m.Terms })));
 
 // Medical
-import { MedicalHome } from './pages/medical/MedicalHome';
-import { Patients } from './pages/medical/Patients';
-import { PatientDetail } from './pages/medical/PatientDetail';
-import { AddPatient } from './pages/medical/AddPatient';
-import { MedicalAppointments } from './pages/medical/MedicalAppointments';
-import { MedicalStats } from './pages/medical/MedicalStats';
-import { MedicalData } from './pages/medical/MedicalData';
-import { MedicalSettings } from './pages/medical/MedicalSettings';
-import { MedicalNotifications } from './pages/medical/MedicalNotifications';
-import { Support } from './pages/medical/Support';
-import { MedicalAccount } from './pages/medical/MedicalAccount';
+const MedicalHome = lazy(() => loadPage(() => import('./pages/medical/MedicalHome')).then(m => ({ default: m.MedicalHome })));
+const Patients = lazy(() => loadPage(() => import('./pages/medical/Patients')).then(m => ({ default: m.Patients })));
+const PatientDetail = lazy(() => loadPage(() => import('./pages/medical/PatientDetail')).then(m => ({ default: m.PatientDetail })));
+const AddPatient = lazy(() => loadPage(() => import('./pages/medical/AddPatient')).then(m => ({ default: m.AddPatient })));
+const MedicalAppointments = lazy(() => loadPage(() => import('./pages/medical/MedicalAppointments')).then(m => ({ default: m.MedicalAppointments })));
+const MedicalStats = lazy(() => loadPage(() => import('./pages/medical/MedicalStats')).then(m => ({ default: m.MedicalStats })));
+const MedicalData = lazy(() => loadPage(() => import('./pages/medical/MedicalData')).then(m => ({ default: m.MedicalData })));
+const MedicalSettings = lazy(() => loadPage(() => import('./pages/medical/MedicalSettings')).then(m => ({ default: m.MedicalSettings })));
+const MedicalNotifications = lazy(() => loadPage(() => import('./pages/medical/MedicalNotifications')).then(m => ({ default: m.MedicalNotifications })));
+const Support = lazy(() => loadPage(() => import('./pages/medical/Support')).then(m => ({ default: m.Support })));
+const MedicalAccount = lazy(() => loadPage(() => import('./pages/medical/MedicalAccount')).then(m => ({ default: m.MedicalAccount })));
 
 // Business
-import { BusinessHome } from './pages/business/BusinessHome';
-import { Clients } from './pages/business/Clients';
-import { ClientRegistration } from './pages/shared/ClientRegistration';
-import { ClientDetail } from './pages/business/ClientDetail';
-import { Employees } from './pages/business/Employees';
-import { EmployeeDetail } from './pages/business/EmployeeDetail';
-import { Transactions } from './pages/business/Transactions';
-import { BusinessProducts } from './pages/business/BusinessProducts';
-import { Services } from './pages/business/Services';
-import { BusinessAppointments } from './pages/business/BusinessAppointments';
-import { BusinessStats } from './pages/business/BusinessStats';
-import { BusinessData } from './pages/business/BusinessData';
-import { BusinessSettings } from './pages/business/BusinessSettings';
-import { BusinessAccount } from './pages/business/BusinessAccount';
-import { Plan } from './pages/business/Plan';
-import { BusinessNotifications } from './pages/business/BusinessNotifications';
+const BusinessHome = lazy(() => loadPage(() => import('./pages/business/BusinessHome')).then(m => ({ default: m.BusinessHome })));
+const Clients = lazy(() => loadPage(() => import('./pages/business/Clients')).then(m => ({ default: m.Clients })));
+const ClientRegistration = lazy(() => loadPage(() => import('./pages/shared/ClientRegistration')).then(m => ({ default: m.ClientRegistration })));
+const ClientDetail = lazy(() => loadPage(() => import('./pages/business/ClientDetail')).then(m => ({ default: m.ClientDetail })));
+const Employees = lazy(() => loadPage(() => import('./pages/business/Employees')).then(m => ({ default: m.Employees })));
+const EmployeeDetail = lazy(() => loadPage(() => import('./pages/business/EmployeeDetail')).then(m => ({ default: m.EmployeeDetail })));
+const Transactions = lazy(() => loadPage(() => import('./pages/business/Transactions')).then(m => ({ default: m.Transactions })));
+const BusinessProducts = lazy(() => loadPage(() => import('./pages/business/BusinessProducts')).then(m => ({ default: m.BusinessProducts })));
+const Services = lazy(() => loadPage(() => import('./pages/business/Services')).then(m => ({ default: m.Services })));
+const BusinessAppointments = lazy(() => loadPage(() => import('./pages/business/BusinessAppointments')).then(m => ({ default: m.BusinessAppointments })));
+const BusinessStats = lazy(() => loadPage(() => import('./pages/business/BusinessStats')).then(m => ({ default: m.BusinessStats })));
+const BusinessData = lazy(() => loadPage(() => import('./pages/business/BusinessData')).then(m => ({ default: m.BusinessData })));
+const BusinessSettings = lazy(() => loadPage(() => import('./pages/business/BusinessSettings')).then(m => ({ default: m.BusinessSettings })));
+const BusinessAccount = lazy(() => loadPage(() => import('./pages/business/BusinessAccount')).then(m => ({ default: m.BusinessAccount })));
+const Plan = lazy(() => loadPage(() => import('./pages/business/Plan')).then(m => ({ default: m.Plan })));
+const BusinessNotifications = lazy(() => loadPage(() => import('./pages/business/BusinessNotifications')).then(m => ({ default: m.BusinessNotifications })));
 
 // ─── Reset scroll on navigation (or jump to #hash targets) ────────────────────
 
@@ -131,7 +133,8 @@ function AnimatedRoutes() {
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Suspense key={location.pathname} fallback={<LoadingState label="Loading..." padding="30vh 0" />}>
+      <Routes location={location}>
 
         {/* ── Public ── */}
         <Route path="/" element={<LandingPage />} />
@@ -182,6 +185,7 @@ function AnimatedRoutes() {
         <Route path="*" element={<NotFound />} />
 
       </Routes>
+      </Suspense>
     </AnimatePresence>
   );
 }
@@ -196,7 +200,9 @@ export default function App() {
           <ThemeProvider>
             <ScrollManager />
             <DocumentTitle />
-            <AnimatedRoutes />
+            <AppErrorBoundary>
+              <AnimatedRoutes />
+            </AppErrorBoundary>
           </ThemeProvider>
         </AuthProvider>
       </BrowserRouter>

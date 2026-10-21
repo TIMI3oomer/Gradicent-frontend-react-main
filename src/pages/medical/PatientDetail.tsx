@@ -9,6 +9,7 @@ import { ErrorBanner, LoadingState, UnavailableNotice } from '../../components/s
 import { SIGNED_OUT_MESSAGE, errorMessage, isMissingEndpoint } from '../../components/shared/apiHelpers';
 import { MEDICAL_DOMAIN, fetchPatient, toVisits, updatePatient, type VisitRecord } from '../../components/medical/patientData';
 import { EditPatientModal } from '../../components/medical/EditPatientModal';
+import { DocumentsPanel } from '../../components/shared/Documents/DocumentsPanel';
 import type { SaveStatus } from '../../components/shared/userProfile';
 import { formatDate, formatRelativeTime } from '../../lib/formatters';
 import { MEDICAL_ROUTES } from '../../lib/constants';
@@ -388,7 +389,8 @@ export function PatientDetail() {
       )}
 
       {activeTab === 'Notes & Documents' && (
-        <div className="card" style={{ maxWidth: 600 }}>
+        <div className="two-col">
+        <div className="card">
           <div className="card-title" style={{ marginBottom: 16 }}>Clinical Notes</div>
           <form
             onSubmit={e => { e.preventDefault(); handleSaveNote(); }}
@@ -446,6 +448,10 @@ export function PatientDetail() {
               <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{patient.notes}</div>
             </div>
           )}
+        </div>
+        <div className="card">
+          <DocumentsPanel domain="medical" clientId={patient.id} subject="patient" />
+        </div>
         </div>
       )}
 

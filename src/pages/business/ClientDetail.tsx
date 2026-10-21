@@ -8,13 +8,14 @@ import { ErrorBanner, LoadingState, UnavailableNotice } from '../../components/s
 import { SIGNED_OUT_MESSAGE, errorMessage, isMissingEndpoint, toArray, toNumber, toRecord } from '../../components/shared/apiHelpers';
 import { Avatar } from '../../components/shared/Avatar';
 import { DataTable, type Column } from '../../components/shared/DataTable/DataTable';
+import { DocumentsPanel } from '../../components/shared/Documents/DocumentsPanel';
 import { BUSINESS_ROUTES } from '../../lib/constants';
 import { formatCurrency, formatDate } from '../../lib/formatters';
 import type { Client, Transaction, Appointment } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 
-const TABS = ['Overview', 'Transactions', 'Appointments', 'Notes'] as const;
+const TABS = ['Overview', 'Transactions', 'Appointments', 'Notes', 'Documents'] as const;
 type Tab = typeof TABS[number];
 type ListState<T> = { rows: T[]; error: string | null; unavailable: boolean };
 
@@ -302,6 +303,12 @@ export function ClientDetail() {
                 {notesStatus?.type === 'error' && <span style={{ color: 'var(--danger)' }}>{notesStatus.message}</span>}
               </span>
             </div>
+          </div>
+        )}
+
+        {tab === 'Documents' && (
+          <div className="card">
+            <DocumentsPanel domain="business" clientId={String(client.id ?? id)} subject="client" />
           </div>
         )}
       </div>
